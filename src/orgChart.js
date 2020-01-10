@@ -20,35 +20,41 @@ class OrgChart {
             ? (data = defaultOptions['data'])
             : (data = options['data']);
 
-        data.forEach((item, index) => {
-            const children = item['children'];
-            const container = document.querySelector(options['container']);
-            const member = document.createElement('div');
-            const name = document.createElement('p');
-            const createChild = document.createElement('button');
-            const removeNode = document.createElement('button');
-            let groupColumn;
+        this.tree = this._treeModel(data);
+    }
 
-            member.className = 'member';
-            name.textContent = item['name'];
-            createChild.type = 'button';
-            createChild.textContent = '추가';
-            createChild.className = 'create-btn';
-            removeNode.type = 'button';
-            removeNode.textContent = '삭제';
-            removeNode.className = 'remove-btn';
-            member.appendChild(name);
-            member.appendChild(createChild);
-            member.appendChild(removeNode);
-            groupColumn = document.createElement(`div`);
-            groupColumn.className = 'group-column';
-            groupColumn.appendChild(member);
-            container.appendChild(groupColumn);
-        });
+    _treeModel(arr) {
+        const treeNodes = [];
+
+        const traverse = (nodes, item, index) => {
+            if (nodes instanceof Array) {
+                return nodes.some((node) => {
+                    if (node['id'] === item['parentId']) {
+                        node['children'] = node['children'] || [];
+
+                        return node['children'].push(arr.splice(index, 1)[0]);
+                    }
+
+                    return traverse(node['children'], item, index);
+                });
+            }
+        };
+
+        while (arr.length > 0) {
+            arr.some((item, index) => {
+                if (item['parentId'] === null) {
+                    return treeNodes.push(arr.splice(index, 1)[0]);
+                }
+
+                return traverse(treeNodes, item, index);
+            });
+        }
+
+        return treeNodes;
     }
 
     print() {
-        console.log(this.data);
+        console.log(this.tree);
     }
 }
 
@@ -56,18 +62,24 @@ const orgChart = new OrgChart({
     container: '#container',
     data: [
         {
+            id: 0,
             name: 'administrator',
-            children: [
-                {
-                    name: 'sibling'
-                },
-                {
-                    name: 'sibling',
-                    children: {
-                        name: 'child'
-                    }
-                }
-            ]
+            parentId: null
+        },
+        {
+            id: 1,
+            name: 'sibling',
+            parentId: 0
+        },
+        {
+            id: 2,
+            name: 'sibling',
+            parentId: 0
+        },
+        {
+            id: 3,
+            name: 'child',
+            parentId: 2
         }
     ]
 });
