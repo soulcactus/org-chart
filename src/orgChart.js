@@ -21,6 +21,9 @@ class OrgChart {
             : (data = options['data']);
 
         this.tree = this._treeModel(data);
+        document
+            .querySelector(options['container'])
+            .appendChild(this._printTree(this.tree));
     }
 
     _treeModel(arr) {
@@ -53,7 +56,92 @@ class OrgChart {
         return treeNodes;
     }
 
+    _printTree(arr) {
+        let column;
+        let row;
+
+        const print = (arr, elements) => {
+            console.log(arr);
+
+            if (arr.length === 1) {
+                const groupColumn = document.createElement('div');
+                const member = document.createElement('div');
+                const add = document.createElement('button');
+
+                groupColumn.className = 'group-column';
+                member.className = 'member';
+                member.textContent = arr[0]['name'];
+                add.className = 'add';
+                add.textContent = '추가';
+                member.appendChild(add);
+                groupColumn.appendChild(member);
+
+                if (!elements) {
+                    elements = groupColumn;
+                } else {
+                    column.appendChild(groupColumn);
+                }
+
+                if (arr[0]['children']) {
+                    return print(arr[0]['children'], groupColumn);
+                }
+            } else {
+                arr.some((item, index) => {
+                    const groupColumn = document.createElement('div');
+                    const member = document.createElement('div');
+                    const add = document.createElement('button');
+
+                    if (index === 0) {
+                        const groupRow = document.createElement('div');
+
+                        groupRow.className = 'group-row';
+                        groupColumn.className = 'group-column';
+                        member.className = 'member';
+                        member.textContent = item['name'];
+                        add.className = 'add';
+                        add.textContent = '추가';
+                        member.appendChild(add);
+                        groupColumn.appendChild(member);
+                        groupRow.appendChild(groupColumn);
+
+                        if (!elements) {
+                            elements = groupRow;
+                        } else {
+                            elements.appendChild(groupRow);
+                        }
+
+                        row = groupRow;
+                        column = groupColumn;
+                    } else {
+                        groupColumn.className = 'group-column';
+                        member.className = 'member';
+                        member.textContent = item['name'];
+                        add.className = 'add';
+                        add.textContent = '추가';
+                        member.appendChild(add);
+                        groupColumn.appendChild(member);
+
+                        if (!elements) {
+                            elements.appendChild(groupColumn);
+                        } else {
+                            column.appendChild(groupColumn);
+                        }
+                    }
+
+                    if (item['children']) {
+                        return print(item['children'], row);
+                    }
+                });
+            }
+
+            return elements;
+        };
+
+        return print(arr);
+    }
+
     print() {
+        console.log(this._printTree(this.tree));
         console.log(this.tree);
     }
 }
@@ -68,17 +156,22 @@ const orgChart = new OrgChart({
         },
         {
             id: 1,
-            name: 'sibling',
+            name: 'sibling1',
             parentId: 0
         },
         {
             id: 2,
-            name: 'sibling',
+            name: 'sibling2',
             parentId: 0
         },
         {
             id: 3,
-            name: 'child',
+            name: 'child1',
+            parentId: 2
+        },
+        {
+            id: 4,
+            name: 'child2',
             parentId: 2
         }
     ]
