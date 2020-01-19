@@ -61,8 +61,6 @@ class OrgChart {
         let row;
 
         const print = (arr, elements) => {
-            console.log(arr);
-
             if (arr.length === 1) {
                 const groupColumn = document.createElement('div');
                 const member = document.createElement('div');
@@ -79,7 +77,7 @@ class OrgChart {
                 if (!elements) {
                     elements = groupColumn;
                 } else {
-                    column.appendChild(groupColumn);
+                    elements.appendChild(groupColumn);
                 }
 
                 if (arr[0]['children']) {
@@ -124,12 +122,18 @@ class OrgChart {
                         if (!elements) {
                             elements.appendChild(groupColumn);
                         } else {
-                            column.appendChild(groupColumn);
+                            row.appendChild(groupColumn);
                         }
-                    }
 
-                    if (item['children']) {
-                        return print(item['children'], row);
+                        if (index === 1) {
+                            if (item['children']) {
+                                return print(item['children'], groupColumn);
+                            }
+                        } else {
+                            if (item['children']) {
+                                return print(item['children'], row);
+                            }
+                        }
                     }
                 });
             }
@@ -141,7 +145,6 @@ class OrgChart {
     }
 
     print() {
-        console.log(this._printTree(this.tree));
         console.log(this.tree);
     }
 }
@@ -173,6 +176,21 @@ const orgChart = new OrgChart({
             id: 4,
             name: 'child2',
             parentId: 2
+        },
+        {
+            id: 5,
+            name: 'child3',
+            parentId: 2
+        },
+        {
+            id: 6,
+            name: 'children1',
+            parentId: 4
+        },
+        {
+            id: 7,
+            name: 'children1',
+            parentId: 4
         }
     ]
 });
