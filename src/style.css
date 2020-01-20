@@ -19,6 +19,24 @@
     justify-content: center;
 }
 
+.line-box {
+    display: flex;
+    width: 100%;
+}
+
+.line {
+    width: 50%;
+    height: 2rem;
+}
+
+.line.border-right {
+    border-right: 0.1rem solid #ccc;
+}
+
+.line.border-top {
+    border-top: 0.1rem solid #ccc;
+}
+
 .member {
     width: 200px;
     border: 0.1rem solid #ccc;
