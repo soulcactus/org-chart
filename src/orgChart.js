@@ -57,71 +57,86 @@ class OrgChart {
         return treeNodes;
     }
 
-    _lineCount(arr) {}
-
     _printTree(arr, parentNode) {
-        if (arr.length === 1) {
+        arr.forEach((item, index) => {
+            const parent = item['parentId'];
+            const children = item['children'];
             const groupColumn = document.createElement('div');
+            const lineBox = document.createElement('div');
+            const lineLeft = document.createElement('div');
+            const lineRight = document.createElement('div');
             const member = document.createElement('div');
             const add = document.createElement('button');
 
             groupColumn.className = 'group-column';
+            lineBox.className = 'line-box';
+            lineLeft.className = 'line';
+            lineLeft.classList.add('border-right');
+            lineRight.className = 'line';
+
+            if (arr.length !== 1) {
+                if (index === 0) {
+                    lineRight.classList.add('border-top');
+                } else if (index === arr.length - 1) {
+                    lineLeft.classList.add('border-top');
+                } else {
+                    lineLeft.classList.add('border-top');
+                    lineRight.classList.add('border-top');
+                }
+            }
+
             member.className = 'member';
-            member.textContent = arr[0]['name'];
+            member.textContent = item['name'];
             add.className = 'add';
             add.textContent = '추가';
             member.appendChild(add);
-            groupColumn.appendChild(member);
-            parentNode.appendChild(groupColumn);
-            parentNode = groupColumn;
+            lineBox.appendChild(lineLeft);
+            lineBox.appendChild(lineRight);
 
-            if (arr[0]['children']) {
-                this._printTree(arr[0]['children'], parentNode);
+            if (parent !== null) {
+                groupColumn.appendChild(lineBox);
             }
-        } else {
-            arr.forEach((item, index) => {
+
+            groupColumn.appendChild(member);
+
+            if (children) {
+                const lineBox = document.createElement('div');
+                const lineLeft = document.createElement('div');
+                const lineRight = document.createElement('div');
+
+                lineBox.className = 'line-box';
+                lineLeft.className = 'line';
+                lineLeft.classList.add('border-right');
+                lineRight.className = 'line';
+                lineBox.appendChild(lineLeft);
+                lineBox.appendChild(lineRight);
+                groupColumn.appendChild(lineBox);
+            }
+
+            if (arr.length === 1) {
+                parentNode.appendChild(groupColumn);
+                parentNode = groupColumn;
+
+                if (children) {
+                    this._printTree(children, parentNode);
+                }
+            } else {
                 if (index === 0) {
                     const groupRow = document.createElement('div');
-                    const groupColumn = document.createElement('div');
-                    const member = document.createElement('div');
-                    const add = document.createElement('button');
 
                     groupRow.className = 'group-row';
-                    groupColumn.className = 'group-column';
-                    member.className = 'member';
-                    member.textContent = item['name'];
-                    add.className = 'add';
-                    add.textContent = '추가';
-                    member.appendChild(add);
-                    groupColumn.appendChild(member);
                     groupRow.appendChild(groupColumn);
                     parentNode.appendChild(groupRow);
                     parentNode = groupRow;
-
-                    if (item['children']) {
-                        this._printTree(item['children'], groupColumn);
-                    }
                 } else {
-                    const groupColumn = document.createElement('div');
-                    const member = document.createElement('div');
-                    const add = document.createElement('button');
-
-                    groupColumn.className = 'group-column';
-                    member.className = 'member';
-                    member.textContent = item['name'];
-                    add.className = 'add';
-                    add.textContent = '추가';
-                    member.appendChild(add);
-                    groupColumn.appendChild(member);
-                    console.log(parentNode);
                     parentNode.appendChild(groupColumn);
-
-                    if (item['children']) {
-                        this._printTree(item['children'], groupColumn);
-                    }
                 }
-            });
-        }
+
+                if (children) {
+                    this._printTree(children, groupColumn);
+                }
+            }
+        });
     }
 
     print() {
@@ -134,7 +149,7 @@ const orgChart = new OrgChart({
     data: [
         {
             id: 0,
-            name: 'administrator',
+            name: 'administrator1',
             parentId: null
         },
         {
@@ -155,12 +170,42 @@ const orgChart = new OrgChart({
         {
             id: 4,
             name: 'child1',
-            parentId: 2
+            parentId: 1
         },
         {
-            id: 4,
+            id: 5,
             name: 'child2',
-            parentId: 2
+            parentId: 1
+        },
+        {
+            id: 6,
+            name: 'child3',
+            parentId: 1
+        },
+        {
+            id: 7,
+            name: 'child5',
+            parentId: 3
+        },
+        {
+            id: 8,
+            name: 'child6',
+            parentId: 3
+        },
+        {
+            id: 9,
+            name: 'child4',
+            parentId: 1
+        },
+        {
+            id: 10,
+            name: 'child7',
+            parentId: 9
+        },
+        {
+            id: 11,
+            name: 'child8',
+            parentId: 9
         }
     ]
 });
