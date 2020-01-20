@@ -11,7 +11,9 @@ class OrgChart {
             ]
         };
 
+        const container = document.querySelector(options['container']);
         let data;
+        let tree;
 
         this.data = options;
         data = this.data;
@@ -21,9 +23,8 @@ class OrgChart {
             : (data = options['data']);
 
         this.tree = this._treeModel(data);
-        document
-            .querySelector(options['container'])
-            .appendChild(this._printTree(this.tree));
+        tree = this.tree;
+        this._printTree(tree, container);
     }
 
     _treeModel(arr) {
@@ -56,92 +57,71 @@ class OrgChart {
         return treeNodes;
     }
 
-    _printTree(arr) {
-        let column;
-        let row;
+    _lineCount(arr) {}
 
-        const print = (arr, elements) => {
-            if (arr.length === 1) {
-                const groupColumn = document.createElement('div');
-                const member = document.createElement('div');
-                const add = document.createElement('button');
+    _printTree(arr, parentNode) {
+        if (arr.length === 1) {
+            const groupColumn = document.createElement('div');
+            const member = document.createElement('div');
+            const add = document.createElement('button');
 
-                groupColumn.className = 'group-column';
-                member.className = 'member';
-                member.textContent = arr[0]['name'];
-                add.className = 'add';
-                add.textContent = '추가';
-                member.appendChild(add);
-                groupColumn.appendChild(member);
+            groupColumn.className = 'group-column';
+            member.className = 'member';
+            member.textContent = arr[0]['name'];
+            add.className = 'add';
+            add.textContent = '추가';
+            member.appendChild(add);
+            groupColumn.appendChild(member);
+            parentNode.appendChild(groupColumn);
+            parentNode = groupColumn;
 
-                if (!elements) {
-                    elements = groupColumn;
-                } else {
-                    elements.appendChild(groupColumn);
-                }
-
-                if (arr[0]['children']) {
-                    return print(arr[0]['children'], groupColumn);
-                }
-            } else {
-                arr.some((item, index) => {
+            if (arr[0]['children']) {
+                this._printTree(arr[0]['children'], parentNode);
+            }
+        } else {
+            arr.forEach((item, index) => {
+                if (index === 0) {
+                    const groupRow = document.createElement('div');
                     const groupColumn = document.createElement('div');
                     const member = document.createElement('div');
                     const add = document.createElement('button');
 
-                    if (index === 0) {
-                        const groupRow = document.createElement('div');
+                    groupRow.className = 'group-row';
+                    groupColumn.className = 'group-column';
+                    member.className = 'member';
+                    member.textContent = item['name'];
+                    add.className = 'add';
+                    add.textContent = '추가';
+                    member.appendChild(add);
+                    groupColumn.appendChild(member);
+                    groupRow.appendChild(groupColumn);
+                    parentNode.appendChild(groupRow);
+                    parentNode = groupRow;
 
-                        groupRow.className = 'group-row';
-                        groupColumn.className = 'group-column';
-                        member.className = 'member';
-                        member.textContent = item['name'];
-                        add.className = 'add';
-                        add.textContent = '추가';
-                        member.appendChild(add);
-                        groupColumn.appendChild(member);
-                        groupRow.appendChild(groupColumn);
-
-                        if (!elements) {
-                            elements = groupRow;
-                        } else {
-                            elements.appendChild(groupRow);
-                        }
-
-                        row = groupRow;
-                        column = groupColumn;
-                    } else {
-                        groupColumn.className = 'group-column';
-                        member.className = 'member';
-                        member.textContent = item['name'];
-                        add.className = 'add';
-                        add.textContent = '추가';
-                        member.appendChild(add);
-                        groupColumn.appendChild(member);
-
-                        if (!elements) {
-                            elements.appendChild(groupColumn);
-                        } else {
-                            row.appendChild(groupColumn);
-                        }
-
-                        if (index === 1) {
-                            if (item['children']) {
-                                return print(item['children'], groupColumn);
-                            }
-                        } else {
-                            if (item['children']) {
-                                return print(item['children'], row);
-                            }
-                        }
+                    if (item['children']) {
+                        this._printTree(item['children'], groupColumn);
                     }
-                });
-            }
+                } else {
+                    const groupColumn = document.createElement('div');
+                    const member = document.createElement('div');
+                    const add = document.createElement('button');
 
-            return elements;
-        };
+                    groupColumn.className = 'group-column';
+                    member.className = 'member';
+                    member.textContent = item['name'];
+                    add.className = 'add';
+                    add.textContent = '추가';
+                    member.appendChild(add);
+                    groupColumn.appendChild(member);
+                    console.log(parentNode);
+                    parentNode.appendChild(groupColumn);
 
-        return print(arr);
+                    if (item['children']) {
+                        this._printTree(item['children'], groupColumn);
+                    }
+                }
+            });
+        }
     }
 
     print() {
@@ -169,6 +149,11 @@ const orgChart = new OrgChart({
         },
         {
             id: 3,
+            name: 'sibling3',
+            parentId: 0
+        },
+        {
+            id: 4,
             name: 'child1',
             parentId: 2
         },
@@ -176,21 +161,6 @@ const orgChart = new OrgChart({
             id: 4,
             name: 'child2',
             parentId: 2
-        },
-        {
-            id: 5,
-            name: 'child3',
-            parentId: 2
-        },
-        {
-            id: 6,
-            name: 'children1',
-            parentId: 4
-        },
-        {
-            id: 7,
-            name: 'children1',
-            parentId: 4
         }
     ]
 });
