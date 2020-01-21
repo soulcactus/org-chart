@@ -45,8 +45,14 @@
     text-align: center;
 }
 
-.add {
+.add-btn {
     margin-right: 1rem;
     background-color: blue;
+    color: white;
+}
+
+.remove-btn {
+    margin-right: 1rem;
+    background-color: red;
     color: white;
 }
