@@ -1,30 +1,87 @@
 class OrgChart {
     constructor(options) {
-        const defaultOptions = {
-            data: [
-                {
-                    id: 0,
-                    name: 'administrator',
-                    level: 0,
-                    parent: null
+        const opts = { ...options };
+        const container = document.querySelector(opts['container']);
+        const data = opts['data'].sort((a, b) => a['id'] - b['id']);
+        const tree = this._treeModel(JSON.parse(JSON.stringify(data)));
+        const printTree = this._printTree(tree, container);
+
+        this.container = container;
+        this.data = data;
+        this.tree = tree;
+        this.id = data[data.length - 1]['id'];
+        this._addEvent();
+    }
+
+    _addNode(e) {
+        console.time('addNode');
+        const container = this.container;
+        const data = this.data;
+        const id = ++this.id;
+        const name = 'test';
+        const parentId = Number(e.target.parentNode.getAttribute('data-value'));
+        let tree = this.tree;
+
+        data.push({ id: id, name: name, parentId: parentId });
+        tree = this._treeModel(JSON.parse(JSON.stringify(data)));
+        container.innerHTML = '';
+        this.tree = tree;
+        this._printTree(tree, container);
+        this._addEvent();
+        console.timeEnd('addNode');
+    }
+
+    _removeNode(e) {
+        console.time('removeNode');
+        const container = this.container;
+        const id = Number(e.target.parentNode.getAttribute('data-value'));
+        let data = this.data;
+        let tree = this.tree;
+        let list = [];
+
+        const searchTree = (arr, id) => {
+            arr.forEach((item) => {
+                if (
+                    (item['parentId'] !== null && item['id'] === id) ||
+                    item['parentId'] === id
+                ) {
+                    list.push(item['id']);
+
+                    if (item['parentId'] === id && item['children']) {
+                        searchTree(item['children'], item['id']);
+                    }
                 }
-            ]
+
+                if (item['children']) {
+                    searchTree(item['children'], id);
+                }
+            });
+
+            return list;
         };
 
-        const container = document.querySelector(options['container']);
-        let data;
-        let tree;
-
-        this.data = options;
-        data = this.data;
-
-        !options || !options['data'] || !Object.keys(options).length
-            ? (data = defaultOptions['data'])
-            : (data = options['data']);
-
-        this.tree = this._treeModel(data);
-        tree = this.tree;
+        list = searchTree(tree, id);
+        data = data.filter((item) => !list.includes(item['id']));
+        tree = this._treeModel(JSON.parse(JSON.stringify(data)));
+        container.innerHTML = '';
+        this.data = data;
+        this.tree = tree;
         this._printTree(tree, container);
+        this._addEvent();
+        console.timeEnd('removeNode');
+    }
+
+    _addEvent() {
+        const addBtns = document.querySelectorAll('.add-btn');
+        const removeBtns = document.querySelectorAll('.remove-btn');
+
+        addBtns.forEach((item) =>
+            item.addEventListener('click', this._addNode.bind(this))
+        );
+
+        removeBtns.forEach((item) =>
+            item.addEventListener('click', this._removeNode.bind(this))
+        );
     }
 
     _treeModel(arr) {
@@ -66,7 +123,8 @@ class OrgChart {
             const lineLeft = document.createElement('div');
             const lineRight = document.createElement('div');
             const member = document.createElement('div');
-            const add = document.createElement('button');
+            const addBtn = document.createElement('button');
+            const removeBtn = document.createElement('button');
 
             groupColumn.className = 'group-column';
             lineBox.className = 'line-box';
@@ -87,9 +145,13 @@ class OrgChart {
 
             member.className = 'member';
             member.textContent = item['name'];
-            add.className = 'add';
-            add.textContent = '추가';
-            member.appendChild(add);
+            member.setAttribute('data-value', item['id']);
+            addBtn.className = 'add-btn';
+            addBtn.textContent = '추가';
+            removeBtn.className = 'remove-btn';
+            removeBtn.textContent = '삭제';
+            member.appendChild(addBtn);
+            member.appendChild(removeBtn);
             lineBox.appendChild(lineLeft);
             lineBox.appendChild(lineRight);
 
@@ -140,6 +202,7 @@ class OrgChart {
     }
 
     print() {
+        console.log(this.data);
         console.log(this.tree);
     }
 }
