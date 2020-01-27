@@ -4,8 +4,8 @@ class OrgChart {
         const container = document.querySelector(opts['container']);
         const data = opts['data'].sort((a, b) => a['id'] - b['id']);
         const tree = this._treeModel(JSON.parse(JSON.stringify(data)));
-        const printTree = this._printTree(tree, container);
 
+        this._printTree(tree, container);
         this.container = container;
         this.data = data;
         this.tree = tree;
@@ -76,11 +76,11 @@ class OrgChart {
         const removeBtns = document.querySelectorAll('.remove-btn');
 
         addBtns.forEach((item) =>
-            item.addEventListener('click', this._addNode.bind(this))
+            item.addEventListener('click', this._addNode.bind(this)),
         );
 
         removeBtns.forEach((item) =>
-            item.addEventListener('click', this._removeNode.bind(this))
+            item.addEventListener('click', this._removeNode.bind(this)),
         );
     }
 
@@ -213,64 +213,64 @@ const orgChart = new OrgChart({
         {
             id: 0,
             name: 'administrator1',
-            parentId: null
+            parentId: null,
         },
         {
             id: 1,
             name: 'sibling1',
-            parentId: 0
+            parentId: 0,
         },
         {
             id: 2,
             name: 'sibling2',
-            parentId: 0
+            parentId: 0,
         },
         {
             id: 3,
             name: 'sibling3',
-            parentId: 0
+            parentId: 0,
         },
         {
             id: 4,
             name: 'child1',
-            parentId: 1
+            parentId: 1,
         },
         {
             id: 5,
             name: 'child2',
-            parentId: 1
+            parentId: 1,
         },
         {
             id: 6,
             name: 'child3',
-            parentId: 1
+            parentId: 1,
         },
         {
             id: 7,
             name: 'child5',
-            parentId: 3
+            parentId: 3,
         },
         {
             id: 8,
             name: 'child6',
-            parentId: 3
+            parentId: 3,
         },
         {
             id: 9,
             name: 'child4',
-            parentId: 1
+            parentId: 1,
         },
         {
             id: 10,
             name: 'child7',
-            parentId: 9
+            parentId: 9,
         },
         {
             id: 11,
             name: 'child8',
-            parentId: 9
-        }
-    ]
+            parentId: 9,
+        },
+    ],
 });
 
 orgChart.print();
