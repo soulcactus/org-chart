@@ -1,10 +1,35 @@
 class OrgChart {
     constructor(options) {
-        const opts = { ...options };
+        const opts = JSON.parse(JSON.stringify(options));
         const container = document.querySelector(opts['container']);
         const data = opts['data'].sort((a, b) => a['id'] - b['id']);
-        const tree = this._treeModel(JSON.parse(JSON.stringify(data)));
+        let tree;
 
+        data.forEach((item, index) => {
+            if (
+                !item.hasOwnProperty('id') ||
+                !item.hasOwnProperty('name') ||
+                !item.hasOwnProperty('parentId')
+            ) {
+                data.splice(index, 1);
+            }
+
+            if (
+                index !== data.length - 1 &&
+                data[index]['id'] === data[index + 1]['id']
+            ) {
+                data.splice(index, 1);
+            }
+
+            if (
+                item['parentId'] !== null &&
+                !data.some((val) => item['parentId'] === val['id'])
+            ) {
+                data.splice(index, 1);
+            }
+        });
+
+        tree = this._treeModel(data);
         this._printTree(tree, container);
         this.container = container;
         this.data = data;
@@ -23,7 +48,7 @@ class OrgChart {
         let tree = this.tree;
 
         data.push({ id: id, name: name, parentId: parentId });
-        tree = this._treeModel(JSON.parse(JSON.stringify(data)));
+        tree = this._treeModel(data);
         container.innerHTML = '';
         this.tree = tree;
         this._printTree(tree, container);
@@ -62,7 +87,7 @@ class OrgChart {
 
         list = searchTree(tree, id);
         data = data.filter((item) => !list.includes(item['id']));
-        tree = this._treeModel(JSON.parse(JSON.stringify(data)));
+        tree = this._treeModel(data);
         container.innerHTML = '';
         this.data = data;
         this.tree = tree;
@@ -84,7 +109,8 @@ class OrgChart {
         );
     }
 
-    _treeModel(arr) {
+    _treeModel(data) {
+        const arr = JSON.parse(JSON.stringify(data));
         const treeNodes = [];
 
         const traverse = (nodes, item, index) => {
@@ -212,6 +238,11 @@ const orgChart = new OrgChart({
     data: [
         {
             id: 0,
+            name: 'administrator2',
+            parentId: null,
+        },
+        {
+            id: 0,
             name: 'administrator1',
             parentId: null,
         },
@@ -243,12 +274,11 @@ const orgChart = new OrgChart({
         {
             id: 6,
             name: 'child3',
-            parentId: 1,
         },
         {
             id: 7,
             name: 'child5',
-            parentId: 3,
+            parentId: 30,
         },
         {
             id: 8,
