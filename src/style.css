@@ -26,33 +26,70 @@
 
 .line {
     width: 50%;
-    height: 2rem;
+    height: 20px;
 }
 
 .line.border-right {
-    border-right: 0.1rem solid #ccc;
+    border-right: 1px solid #ccc;
 }
 
 .line.border-top {
-    border-top: 0.1rem solid #ccc;
+    border-top: 1px solid #ccc;
+}
+
+.member-box {
+    width: 250px;
+    padding: 0 10px;
 }
 
 .member {
-    width: 200px;
-    border: 0.1rem solid #ccc;
+    position: relative;
+    border: 1px solid #ccc;
     box-sizing: border-box;
-    padding: 2rem;
+    padding: 20px;
     text-align: center;
+    font-size: 14px;
+}
+
+.profile-box {
+    display: flex;
+    justify-content: space-between;
+}
+
+.profile-box div {
+    width: 70px;
+    height: 70px;
+    border-radius: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.profile-box div img {
+    width: 100%;
+    object-fit: cover;
+}
+
+.profile-box ul {
+    text-align: left;
+}
+
+.add-btn,
+.remove-btn {
+    width: 26px;
+    height: 26px;
+    position: absolute;
+    border: 1px solid #ddd;
+    border-radius: 100%;
+    background: white;
+    font-size: 18px;
 }
 
 .add-btn {
-    margin-right: 1rem;
-    background-color: blue;
-    color: white;
+    bottom: -13px;
+    left: calc(50% - 13px);
 }
 
 .remove-btn {
-    margin-right: 1rem;
-    background-color: red;
-    color: white;
+    top: -13px;
+    left: calc(50% - 13px);
 }
