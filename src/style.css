@@ -30,35 +30,38 @@
 }
 
 .line.border-right {
-    border-right: 1px solid #ccc;
+    border-right: 3px solid #ccc;
 }
 
 .line.border-top {
-    border-top: 1px solid #ccc;
+    border-top: 3px solid #ccc;
 }
 
 .member-box {
-    width: 250px;
-    padding: 0 10px;
+    width: 270px;
+    padding: 0 20px;
 }
 
 .member {
     position: relative;
     border: 1px solid #ccc;
+    border-radius: 5px;
     box-sizing: border-box;
-    padding: 20px;
+    padding: 15px;
     text-align: center;
     font-size: 14px;
 }
 
 .profile-box {
     display: flex;
+    align-items: center;
     justify-content: space-between;
 }
 
 .profile-box div {
     width: 70px;
     height: 70px;
+    margin: 0 0 0 7px;
     border-radius: 100%;
     box-sizing: border-box;
     overflow: hidden;
@@ -70,11 +73,34 @@
 }
 
 .profile-box ul {
+    width: 50%;
     text-align: left;
 }
 
+.profile-box li:not(:last-child) {
+    margin-bottom: 5px;
+}
+
+.profile-box li:not(:last-child) span {
+    display: block;
+    margin-bottom: 11px;
+}
+
+.profile input {
+    width: 90%;
+    height: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+.profile input::placeholder {
+    color: #ccc;
+}
+
 .add-btn,
-.remove-btn {
+.remove-btn,
+.save-btn {
     width: 26px;
     height: 26px;
     position: absolute;
@@ -92,4 +118,9 @@
 .remove-btn {
     top: -13px;
     left: calc(50% - 13px);
+}
+
+.save-btn {
+    top: -13px;
+    right: -13px;
 }
