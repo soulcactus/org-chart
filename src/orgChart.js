@@ -3,11 +3,11 @@ class OrgChart {
         const initialData = {
             id: 0,
             name: 'name',
-            parentId: null,
+            parentId: null
         };
 
         const initialProfile = {
-            name: 'name',
+            name: 'name'
         };
 
         let opts;
@@ -27,7 +27,8 @@ class OrgChart {
                     !item.hasOwnProperty('id') ||
                     !item.hasOwnProperty('parentId') ||
                     typeof item['id'] !== 'number' ||
-                    typeof item['parentId'] !== 'number' ||
+                    (item['parentId'] !== null &&
+                        typeof item['parentId'] !== 'number') ||
                     Number.isNaN(item['id']) ||
                     Number.isNaN(item['parentId'])
                 ) {
@@ -54,23 +55,27 @@ class OrgChart {
             }
         }
 
+        data.forEach((item) => (item['sequenceId'] = item['id']));
         container = document.querySelector(opts['container']);
-
-        if (!container) {
-            return console.error(
-                "[OrgChart] Error: 'container' property is null. 'container' property of the OrgChart option must be set.",
-            );
-        }
 
         if (data.length !== options['data'].length) {
             console.warn(
-                "[OrgChart] Warning: Some data items have invalid values or do not have required properties. They were excluded. You'd better check the data.",
+                "[OrgChart] Warning: Some data items have invalid values or do not have required properties. They were excluded. You'd better check the data."
+            );
+        }
+
+        if (!container) {
+            return console.error(
+                "[OrgChart] Error: 'container' property is null. 'container' property of the OrgChart option must be set."
             );
         }
 
         tree = this._treeModel(data);
         this.usePhoto = opts['usePhoto'];
         this.profile = opts['profile'] || initialProfile;
+        this.onAddNode = options['onAddNode'];
+        this.onRemoveNode = options['onRemoveNode'];
+        this.onModifyNode = options['onModifyNode'];
         this._printTree(tree, container);
         this.container = container;
         this.data = data;
@@ -88,8 +93,25 @@ class OrgChart {
         let tree = this.tree;
         let obj = {};
 
+        const form = document.querySelectorAll(
+            `input[name*=${Object.keys(this.profile)[0]}]`
+        );
+
+        const checkNode = Array.from(form).some((item) => {
+            if (!item.getAttribute('style')) {
+                item.focus();
+            }
+
+            return !item.getAttribute('style');
+        });
+
+        if (checkNode) {
+            return;
+        }
+
         obj['id'] = id;
         obj['parentId'] = parentId;
+        obj['sequenceId'] = id;
 
         for (const [key, value] of Object.entries(this.profile)) {
             obj[key] = value;
@@ -99,7 +121,7 @@ class OrgChart {
         tree = this._treeModel(data);
         container.innerHTML = '';
         this.tree = tree;
-        this._printTree(tree, container);
+        this._printTree(tree, container, true);
         this._addEvent();
         console.timeEnd('addNode');
     }
@@ -108,53 +130,195 @@ class OrgChart {
         console.time('removeNode');
         const container = this.container;
         const id = Number(e.target.parentNode.getAttribute('data-value'));
+        const onRemoveNode = this.onRemoveNode;
         let data = this.data;
         let tree = this.tree;
-        let list = [];
+        let removeList = [];
+        let newParentId;
+        let newsequenceId;
+        let removeObj = [];
+        let changeObj = [];
 
-        const searchTree = (arr, id) => {
+        const removeTop = (arr, id) => {
             arr.forEach((item) => {
                 if (
                     (item['parentId'] !== null && item['id'] === id) ||
                     item['parentId'] === id
                 ) {
-                    list.push(item['id']);
+                    removeList.push(item['id']);
+                    removeObj.push(item);
 
                     if (item['parentId'] === id && item['children']) {
-                        searchTree(item['children'], item['id']);
+                        removeTop(item['children'], item['id']);
                     }
                 }
 
                 if (item['children']) {
-                    searchTree(item['children'], id);
+                    removeTop(item['children'], id);
                 }
             });
-
-            return list;
         };
 
-        list = searchTree(tree, id);
-        data = data.filter((item) => !list.includes(item['id']));
+        const remove = (arr, id, parent = null, child = null) => {
+            arr.forEach((item) => {
+                if (item['parentId'] !== null && !parent) {
+                    if (item['id'] === id) {
+                        newParentId = parent || item['parentId'];
+                        newsequenceId = child || item['sequenceId'];
+
+                        data.forEach((value, idx) => {
+                            if (value['id'] === item['id']) {
+                                data.splice(idx, 1);
+                                removeObj.push(item);
+                            }
+                        });
+                    } else if (item['parentId'] === id) {
+                        data.forEach((value) => {
+                            if (value['id'] === item['id']) {
+                                value['parentId'] = newParentId;
+                                value['sequenceId'] = newsequenceId;
+                                changeObj.push(value);
+                            }
+                        });
+                    }
+
+                    if (item['parentId'] === id && item['children']) {
+                        remove(
+                            item['children'],
+                            item['id'],
+                            item['id'],
+                            item['sequenceId']
+                        );
+                    }
+                } else if (item['id'] === id) {
+                    return removeTop(tree, id);
+                }
+
+                if (item['children'] && !parent) {
+                    remove(item['children'], id);
+                }
+            });
+        };
+
+        remove(tree, id);
+
+        if (removeList.length) {
+            data = data.filter((item) => !removeList.includes(item['id']));
+        }
+
         tree = this._treeModel(data);
         container.innerHTML = '';
         this.data = data;
         this.tree = tree;
         this._printTree(tree, container);
         this._addEvent();
+
+        if (onRemoveNode) {
+            console.log('삭제');
+
+            changeObj.length
+                ? onRemoveNode([{ ...removeObj }, { ...changeObj }])
+                : onRemoveNode([...removeObj]);
+        }
+
         console.timeEnd('removeNode');
     }
 
     _addEvent() {
         const addBtns = document.querySelectorAll('.add-btn');
         const removeBtns = document.querySelectorAll('.remove-btn');
+        const form = document.querySelectorAll(
+            `input[name*=${Object.keys(this.profile)[0]}]`
+        );
+
+        form.forEach((item) => {
+            if (!item.getAttribute('style')) {
+                item.focus();
+            }
+        });
 
         addBtns.forEach((item) =>
-            item.addEventListener('click', this._addNode.bind(this)),
+            item.addEventListener('click', this._addNode.bind(this))
         );
 
         removeBtns.forEach((item) =>
-            item.addEventListener('click', this._removeNode.bind(this)),
+            item.addEventListener('click', this._removeNode.bind(this))
         );
+
+        this._saveEvent();
+        this._modifyEvent();
+    }
+
+    _saveEvent() {
+        const saveBtns = document.querySelectorAll('.save-btn');
+        const profile = this.profile;
+        const data = this.data;
+        const onAddNode = this.onAddNode;
+        const onModifyNode = this.onModifyNode;
+
+        saveBtns.forEach((item) => {
+            const forms = item.parentNode.querySelectorAll('input');
+
+            item.addEventListener('click', function() {
+                const id = Number(item.parentNode.getAttribute('data-value'));
+
+                forms.forEach((value) => {
+                    const span = value.previousElementSibling;
+                    const form = value.name.replace(/[0-9]/g, '');
+
+                    span.textContent = value.value || profile[form];
+                    span.style.display = 'block';
+                    value.style.display = 'none';
+                });
+
+                item.style.display = 'none';
+
+                if (item.getAttribute('data-value') && onModifyNode) {
+                    console.log('수정', id);
+                    data.forEach((value) => {
+                        if (value['id'] === id) {
+                            onModifyNode(value);
+                        }
+                    });
+                } else if (onAddNode) {
+                    console.log('추가');
+                    data.forEach((value) => {
+                        if (value['id'] === id) {
+                            onAddNode(value);
+                        }
+                    });
+                }
+
+                item.removeAttribute('data-value');
+            });
+        });
+    }
+
+    _modifyEvent() {
+        const span = document.querySelectorAll('.profile span');
+
+        span.forEach((item) => {
+            const parent = item.parentNode.parentNode;
+            const saveBtn = parent.parentNode.parentNode.querySelector(
+                '.save-btn'
+            );
+
+            item.addEventListener('click', function() {
+                const spans = parent.querySelectorAll('span');
+                const forms = parent.querySelectorAll('input');
+
+                spans.forEach((value) => (value.style.display = 'none'));
+
+                forms.forEach((value) => {
+                    value.style.display = 'block';
+                    value.value = value.previousElementSibling.textContent;
+                });
+
+                item.nextElementSibling.focus();
+                saveBtn.style.display = 'block';
+                saveBtn.setAttribute('data-value', true);
+            });
+        });
     }
 
     _treeModel(data) {
@@ -166,8 +330,11 @@ class OrgChart {
                 return nodes.some((node) => {
                     if (node['id'] === item['parentId']) {
                         node['children'] = node['children'] || [];
+                        node['children'].push(arr.splice(index, 1)[0]);
 
-                        return node['children'].push(arr.splice(index, 1)[0]);
+                        return node['children'].sort(
+                            (a, b) => a['sequenceId'] - b['sequenceId']
+                        );
                     }
 
                     return traverse(node['children'], item, index);
@@ -188,7 +355,7 @@ class OrgChart {
         return treeNodes;
     }
 
-    _printTree(arr, parentNode) {
+    _printTree(arr, parentNode, added = false) {
         arr.forEach((item, index) => {
             const parent = item['parentId'];
             const children = item['children'];
@@ -202,6 +369,7 @@ class OrgChart {
             const profile = document.createElement('ul');
             const addBtn = document.createElement('button');
             const removeBtn = document.createElement('button');
+            const saveBtn = document.createElement('button');
 
             groupColumn.className = 'group-column';
             lineBox.className = 'line-box';
@@ -229,9 +397,14 @@ class OrgChart {
             addBtn.innerHTML = '&#43;';
             removeBtn.className = 'remove-btn';
             removeBtn.innerHTML = '&#45;';
+            saveBtn.className = 'save-btn';
+            saveBtn.innerHTML = '&#10003;';
+            saveBtn.style.display = 'none';
 
             for (const [key, value] of Object.entries(this.profile)) {
                 const list = document.createElement('li');
+                const form = document.createElement('input');
+                const span = document.createElement('span');
 
                 if (this.usePhoto === true && key === 'photo') {
                     const photo = document.createElement('div');
@@ -241,8 +414,15 @@ class OrgChart {
                     photo.appendChild(img);
                     profileBox.appendChild(photo);
                 } else {
-                    list.contentEditable = true;
-                    list.textContent = item[key] || value;
+                    form.type = 'text';
+                    form.name = `${key}${item['id']}`;
+                    form.placeholder = key;
+                    span.textContent = item[key] || value;
+                    added && item['id'] === this.id
+                        ? (span.style.display = 'none')
+                        : (form.style.display = 'none');
+                    list.appendChild(span);
+                    list.appendChild(form);
                     profile.appendChild(list);
                 }
             }
@@ -251,9 +431,14 @@ class OrgChart {
             member.appendChild(profileBox);
             member.appendChild(addBtn);
             member.appendChild(removeBtn);
+            member.appendChild(saveBtn);
             memberBox.appendChild(member);
             lineBox.appendChild(lineLeft);
             lineBox.appendChild(lineRight);
+
+            if (added && item['id'] === this.id) {
+                saveBtn.style.display = 'block';
+            }
 
             if (parent !== null) {
                 groupColumn.appendChild(lineBox);
@@ -280,7 +465,7 @@ class OrgChart {
                 parentNode = groupColumn;
 
                 if (children) {
-                    this._printTree(children, parentNode);
+                    this._printTree(children, parentNode, added);
                 }
             } else {
                 if (index === 0) {
@@ -295,7 +480,7 @@ class OrgChart {
                 }
 
                 if (children) {
-                    this._printTree(children, groupColumn);
+                    this._printTree(children, groupColumn, added);
                 }
             }
         });
@@ -314,78 +499,80 @@ const orgChart = new OrgChart({
         name: 'name',
         tel: '000-0000-0000',
         title: 'none',
-        photo: './images/profile.png',
+        photo: './images/profile.png'
     },
     data: [
-        {
-            id: 0,
-            name: 'administrator2',
-            parentId: null,
-        },
         {
             id: 0,
             name: 'administrator1',
             tel: '010-1234-5678',
             title: 'CEO',
-            parentId: null,
+            parentId: null
         },
         {
             id: 1,
             name: 'sibling1',
-            parentId: 0,
+            parentId: 0
         },
         {
-            id: 2,
+            id: '2',
             name: 'sibling2',
-            parentId: 0,
+            parentId: 0
         },
         {
             id: 3,
             name: 'sibling3',
-            parentId: 0,
+            parentId: 0
         },
         {
             id: 4,
             name: 'child1',
-            parentId: 1,
+            parentId: 1
         },
         {
             id: 5,
             name: 'child2',
-            parentId: 1,
+            parentId: 1
         },
         {
             id: 6,
-            name: 'child3',
+            name: 'child3'
         },
         {
             id: 7,
             name: 'child5',
-            parentId: 30,
+            parentId: 30
         },
         {
             id: 8,
             name: 'child6',
-            parentId: 3,
+            parentId: 3
         },
         {
             id: 9,
-            // name: 'child4',
-            parentId: 1,
+            name: 'child4',
+            parentId: 1
         },
         {
             id: 10,
             name: 'child7',
-            parentId: 9,
+            parentId: 9
         },
         {
             id: 11,
             name: 'child8',
-            parentId: 9,
-        },
+            parentId: 9
+        }
     ],
+    onAddNode: function(node) {
+        console.log(node);
+    },
+    onRemoveNode: function(node) {
+        console.log(node);
+    },
+    onModifyNode: function(node) {
+        console.log(node);
+    }
 });
 
 orgChart.print();
-
-console.log('??');
