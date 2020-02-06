@@ -82,20 +82,13 @@ class OrgChart {
         this.tree = tree;
         this.id = data[data.length - 1]['id'];
         this._addEvent();
+        this.dragged;
+        this._dragStartEvent();
     }
 
-    _addNode(e) {
-        console.time('addNode');
-        const container = this.container;
-        const data = this.data;
-        const id = ++this.id;
-        const parentId = Number(e.target.parentNode.getAttribute('data-value'));
-        let tree = this.tree;
-        let obj = {};
-
-        const form = document.querySelectorAll(
-            `input[name*=${Object.keys(this.profile)[0]}]`
-        );
+    _checkNode(btn) {
+        const className = `input[name*=${Object.keys(this.profile)[0]}]`;
+        const form = document.querySelectorAll(className);
 
         const checkNode = Array.from(form).some((item) => {
             if (!item.getAttribute('style')) {
@@ -105,19 +98,76 @@ class OrgChart {
             return !item.getAttribute('style');
         });
 
-        if (checkNode) {
+        return btn &&
+            !btn.parentNode.querySelector(className).getAttribute('style')
+            ? false
+            : checkNode;
+    }
+
+    _addNode(e, move = false) {
+        console.time('addNode');
+        const container = this.container;
+        const data = this.data;
+        const id = ++this.id;
+        const parentId = Number(e.target.parentNode.getAttribute('id'));
+        const dragged = this.dragged;
+        let tree = this.tree;
+        let obj = {};
+
+        if (this._checkNode()) {
             return;
         }
 
-        obj['id'] = id;
-        obj['parentId'] = parentId;
-        obj['sequenceId'] = id;
+        if (move) {
+            let sequenceId;
+            let target = e.target;
 
-        for (const [key, value] of Object.entries(this.profile)) {
-            obj[key] = value;
+            const findTarget = (el) => {
+                if (el) {
+                    return el.className !== 'member'
+                        ? findTarget(el.parentNode)
+                        : (target = el);
+                }
+            };
+
+            findTarget(target);
+
+            if (
+                !target ||
+                target.getAttribute('id') === dragged['id'] ||
+                target.getAttribute('parentId') === dragged['id']
+            ) {
+                return (target.style.background = '');
+            }
+
+            data.forEach((item) => {
+                if (item['parentId'] === Number(target.getAttribute('id'))) {
+                    sequenceId = item['sequenceId'];
+                }
+            });
+
+            data.forEach((item) => {
+                if (item['id'] === Number(dragged.getAttribute('id'))) {
+                    item['parentId'] = Number(target.getAttribute('id'));
+                    item['sequenceId'] = sequenceId + 1;
+                }
+            });
+
+            console.log(target);
+        } else {
+            obj['id'] = id;
+            obj['parentId'] = parentId;
+            obj['sequenceId'] = id;
+
+            for (const [key, value] of Object.entries(this.profile)) {
+                obj[key] = value;
+            }
+
+            data.push(obj);
         }
 
-        data.push(obj);
+        console.log(data);
+
         tree = this._treeModel(data);
         container.innerHTML = '';
         this.tree = tree;
@@ -129,7 +179,7 @@ class OrgChart {
     _removeNode(e) {
         console.time('removeNode');
         const container = this.container;
-        const id = Number(e.target.parentNode.getAttribute('data-value'));
+        const id = Number(e.target.parentNode.getAttribute('id'));
         const onRemoveNode = this.onRemoveNode;
         let data = this.data;
         let tree = this.tree;
@@ -138,6 +188,10 @@ class OrgChart {
         let newsequenceId;
         let removeObj = [];
         let changeObj = [];
+
+        if (this._checkNode(e.target)) {
+            return;
+        }
 
         const removeTop = (arr, id) => {
             arr.forEach((item) => {
@@ -260,7 +314,7 @@ class OrgChart {
             const forms = item.parentNode.querySelectorAll('input');
 
             item.addEventListener('click', function() {
-                const id = Number(item.parentNode.getAttribute('data-value'));
+                const id = Number(item.parentNode.getAttribute('id'));
 
                 forms.forEach((value) => {
                     const span = value.previousElementSibling;
@@ -273,7 +327,7 @@ class OrgChart {
 
                 item.style.display = 'none';
 
-                if (item.getAttribute('data-value') && onModifyNode) {
+                if (item.getAttribute('modified') && onModifyNode) {
                     console.log('수정', id);
                     data.forEach((value) => {
                         if (value['id'] === id) {
@@ -289,7 +343,7 @@ class OrgChart {
                     });
                 }
 
-                item.removeAttribute('data-value');
+                item.removeAttribute('modified');
             });
         });
     }
@@ -316,8 +370,52 @@ class OrgChart {
 
                 item.nextElementSibling.focus();
                 saveBtn.style.display = 'block';
-                saveBtn.setAttribute('data-value', true);
+                saveBtn.setAttribute('modified', true);
             });
+        });
+    }
+
+    _dragStartEvent() {
+        const addNode = this._addNode.bind(this);
+        const that = this;
+
+        container.addEventListener(
+            'dragstart',
+            function(e) {
+                this.dragged = e.target;
+                e.target.style.border = '1px solid red';
+            }.bind(that)
+        );
+
+        container.addEventListener('dragend', function(e) {
+            e.target.style.border = '';
+        });
+
+        container.addEventListener('dragover', function(e) {
+            e.preventDefault();
+        });
+
+        container.addEventListener('dragenter', function(e) {
+            const bgColor = (el) => {
+                if (el) {
+                    return el.className !== 'member'
+                        ? bgColor(el.parentNode)
+                        : (el.style.background = 'red');
+                }
+            };
+
+            bgColor(e.target);
+        });
+
+        container.addEventListener('dragleave', function(e) {
+            if (e.target.className === 'member') {
+                e.target.style.background = '';
+            }
+        });
+
+        container.addEventListener('drop', function(e) {
+            e.preventDefault();
+            addNode(e, true);
         });
     }
 
@@ -390,7 +488,10 @@ class OrgChart {
 
             memberBox.className = 'member-box';
             member.className = 'member';
-            member.setAttribute('data-value', item['id']);
+            member.draggable = true;
+            member.setAttribute('id', item['id']);
+            member.setAttribute('parentId', item['parentId']);
+            member.setAttribute('sequenceId', item['sequenceId']);
             profileBox.className = 'profile-box';
             profile.className = 'profile';
             addBtn.className = 'add-btn';
@@ -411,6 +512,7 @@ class OrgChart {
                     const img = document.createElement('img');
 
                     img.src = item[key] || value;
+                    img.draggable = false;
                     photo.appendChild(img);
                     profileBox.appendChild(photo);
                 } else {
