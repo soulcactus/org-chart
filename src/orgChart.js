@@ -265,10 +265,16 @@ class OrgChart {
             return data.some((item) => {
                 const parentId = item['parentId'];
 
-                if (dragged.getAttribute('parentId') === 'null') {
-                    return dragged.getAttribute('parentId') === 'null';
-                } else if (parent === item['id'] && parent === draggedId) {
-                    return item;
+                if (
+                    (dragged.getAttribute('parentId') === 'null' &&
+                        dragged.parentNode.parentNode.querySelector(
+                            `input[name=${
+                                Object.keys(profile)[0]
+                            }${target.getAttribute('id')}]`
+                        )) ||
+                    (parent === item['id'] && parent === draggedId)
+                ) {
+                    return true;
                 } else if (parent === item['id'] && parentId) {
                     return callee(parentId);
                 }
