@@ -95,22 +95,30 @@ class OrgChart {
         const form = document.querySelectorAll(className);
 
         const checkNode = Array.from(form).some((item) => {
-            if (!item.getAttribute('style')) {
+            const itemStyle = item.getAttribute('style');
+
+            if (!itemStyle) {
                 item.focus();
             }
 
-            return !item.getAttribute('style');
+            return !itemStyle;
         });
 
-        return el &&
-            !el.parentNode.querySelector(className).getAttribute('style')
-            ? false
-            : checkNode;
+        let style;
+
+        if (el) {
+            style = !el.parentNode
+                .querySelector(className)
+                .getAttribute('style');
+        }
+
+        return el && !style ? false : checkNode;
     }
 
     _addNode(e) {
         console.time('addNode');
         const container = this.container;
+        const profile = this.profile;
         const data = this.data;
         const id = ++this.id;
         const parentId = Number(e.target.parentNode.getAttribute('id'));
@@ -123,16 +131,15 @@ class OrgChart {
 
         obj['id'] = id;
         obj['parentId'] = parentId;
-        obj['sequenceId'] = id;
+        // obj['sequenceId'] = 0;
 
-        for (const [key, value] of Object.entries(this.profile)) {
+        for (const [key, value] of Object.entries(profile)) {
             obj[key] = value;
         }
 
-        data.push(obj);
-
-        tree = this._treeModel(data);
         container.innerHTML = '';
+        data.push(obj);
+        tree = this._treeModel(data);
         this.tree = tree;
         this._printTree(tree, container, true);
         this._addEvent();
@@ -462,15 +469,49 @@ class OrgChart {
         const treeNodes = [];
 
         const traverse = (nodes, item, index) => {
+            const itemParentId = item['parentId'];
+            let itemSequenceId = item['sequenceId'];
+
             if (nodes instanceof Array) {
                 return nodes.some((node) => {
-                    if (node['id'] === item['parentId']) {
-                        node['children'] = node['children'] || [];
-                        node['children'].push(arr.splice(index, 1)[0]);
+                    const nodeId = node['id'];
+                    let nodeChildren;
+                    let sequenceId;
 
-                        return node['children'].sort(
+                    if (nodeId === itemParentId) {
+                        node['children'] = node['children'] || [];
+                        nodeChildren = node['children'];
+                        nodeChildren.push(arr.splice(index, 1)[0]);
+
+                        nodeChildren.sort(
                             (a, b) => a['sequenceId'] - b['sequenceId']
                         );
+
+                        sequenceId =
+                            nodeChildren[nodeChildren.length - 1][
+                                'sequenceId'
+                            ] + 1;
+
+                        console.log(itemSequenceId);
+
+                        if (itemSequenceId === undefined) {
+                            if (nodeChildren.length >= 2) {
+                                data.forEach(
+                                    (value) =>
+                                        (value['sequenceId'] = sequenceId)
+                                );
+
+                                itemSequenceId = sequenceId;
+                            } else {
+                                data.forEach(
+                                    (value) => (value['sequenceId'] = 0)
+                                );
+
+                                itemSequenceId = 0;
+                            }
+                        }
+
+                        return itemSequenceId === undefined;
                     }
 
                     return traverse(node['children'], item, index);
