@@ -82,8 +82,7 @@ class OrgChart {
         this.tree = tree;
         this.id = data[data.length - 1]['id'];
         this._addEvent();
-        this.dragged;
-        this._dragStartEvent();
+        this._moveEvent();
     }
 
     _checkNode(btn) {
@@ -104,13 +103,12 @@ class OrgChart {
             : checkNode;
     }
 
-    _addNode(e, move = false) {
+    _addNode(e) {
         console.time('addNode');
         const container = this.container;
         const data = this.data;
         const id = ++this.id;
         const parentId = Number(e.target.parentNode.getAttribute('id'));
-        const dragged = this.dragged;
         let tree = this.tree;
         let obj = {};
 
@@ -118,55 +116,15 @@ class OrgChart {
             return;
         }
 
-        if (move) {
-            let sequenceId;
-            let target = e.target;
+        obj['id'] = id;
+        obj['parentId'] = parentId;
+        obj['sequenceId'] = id;
 
-            const findTarget = (el) => {
-                if (el) {
-                    return el.className !== 'member'
-                        ? findTarget(el.parentNode)
-                        : (target = el);
-                }
-            };
-
-            findTarget(target);
-
-            if (
-                !target ||
-                target.getAttribute('id') === dragged['id'] ||
-                target.getAttribute('parentId') === dragged['id']
-            ) {
-                return (target.style.background = '');
-            }
-
-            data.forEach((item) => {
-                if (item['parentId'] === Number(target.getAttribute('id'))) {
-                    sequenceId = item['sequenceId'];
-                }
-            });
-
-            data.forEach((item) => {
-                if (item['id'] === Number(dragged.getAttribute('id'))) {
-                    item['parentId'] = Number(target.getAttribute('id'));
-                    item['sequenceId'] = sequenceId + 1;
-                }
-            });
-
-            console.log(target);
-        } else {
-            obj['id'] = id;
-            obj['parentId'] = parentId;
-            obj['sequenceId'] = id;
-
-            for (const [key, value] of Object.entries(this.profile)) {
-                obj[key] = value;
-            }
-
-            data.push(obj);
+        for (const [key, value] of Object.entries(this.profile)) {
+            obj[key] = value;
         }
 
-        console.log(data);
+        data.push(obj);
 
         tree = this._treeModel(data);
         container.innerHTML = '';
@@ -278,6 +236,75 @@ class OrgChart {
         console.timeEnd('removeNode');
     }
 
+    _moveNode(e, dragged = null) {
+        console.time('moveNode');
+        const container = this.container;
+        const data = this.data;
+        const profile = this.profile;
+        let tree = this.tree;
+        let sequenceId;
+        let target = e.target;
+
+        const findTarget = (el) => {
+            if (el) {
+                return el.className !== 'member'
+                    ? findTarget(el.parentNode)
+                    : (target = el);
+            }
+        };
+
+        findTarget(target);
+
+        if (this._checkNode()) {
+            return (target.style.background = '');
+        }
+
+        const checkParent = (function callee(parent) {
+            const draggedId = Number(dragged.getAttribute('id'));
+
+            return data.some((item) => {
+                const parentId = item['parentId'];
+
+                if (dragged.getAttribute('parentId') === 'null') {
+                    return dragged.getAttribute('parentId') === 'null';
+                } else if (parent === item['id'] && parent === draggedId) {
+                    return item;
+                } else if (parent === item['id'] && parentId) {
+                    return callee(parentId);
+                }
+            });
+        })(Number(target.getAttribute('parentId')));
+
+        if (
+            !target ||
+            target.getAttribute('id') === dragged.getAttribute('id') ||
+            target.getAttribute('parentId') === dragged.getAttribute('id') ||
+            checkParent
+        ) {
+            return (target.style.background = '');
+        }
+
+        data.forEach((item) => {
+            if (item['parentId'] === Number(target.getAttribute('id'))) {
+                sequenceId = item['sequenceId'];
+            }
+        });
+
+        data.forEach((item) => {
+            if (item['id'] === Number(dragged.getAttribute('id'))) {
+                item['parentId'] = Number(target.getAttribute('id'));
+                item['sequenceId'] = sequenceId + 1;
+            }
+        });
+
+        tree = this._treeModel(data);
+        container.innerHTML = '';
+        this.tree = tree;
+        this._printTree(tree, container);
+        this._addEvent();
+        console.timeEnd('moveNode');
+    }
+
     _addEvent() {
         const addBtns = document.querySelectorAll('.add-btn');
         const removeBtns = document.querySelectorAll('.remove-btn');
@@ -375,14 +402,15 @@ class OrgChart {
         });
     }
 
-    _dragStartEvent() {
-        const addNode = this._addNode.bind(this);
+    _moveEvent() {
         const that = this;
+        const moveNode = this._moveNode.bind(this);
+        let dragged;
 
         container.addEventListener(
             'dragstart',
             function(e) {
-                this.dragged = e.target;
+                dragged = e.target;
                 e.target.style.border = '1px solid red';
             }.bind(that)
         );
@@ -414,8 +442,7 @@ class OrgChart {
         });
 
         container.addEventListener('drop', function(e) {
-            e.preventDefault();
-            addNode(e, true);
+            moveNode(e, dragged);
         });
     }
 
