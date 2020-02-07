@@ -79,8 +79,8 @@ class OrgChart {
         this.profile = opts['profile'] || initialProfile;
         this.data = data;
         this.onAddNode = options['onAddNode'];
-        this.onRemoveNode = options['onRemoveNode'];
         this.onModifyNode = options['onModifyNode'];
+        this.onRemoveNode = options['onRemoveNode'];
         tree = this._treeModel(data);
         this.tree = tree;
         this._printTree(tree, container);
@@ -90,7 +90,7 @@ class OrgChart {
         this._moveEvent();
     }
 
-    _checkNode(btn) {
+    _checkNodeOn(el) {
         const className = `input[name*=${Object.keys(this.profile)[0]}]`;
         const form = document.querySelectorAll(className);
 
@@ -102,8 +102,8 @@ class OrgChart {
             return !item.getAttribute('style');
         });
 
-        return btn &&
-            !btn.parentNode.querySelector(className).getAttribute('style')
+        return el &&
+            !el.parentNode.querySelector(className).getAttribute('style')
             ? false
             : checkNode;
     }
@@ -117,7 +117,7 @@ class OrgChart {
         let tree = this.tree;
         let obj = {};
 
-        if (this._checkNode()) {
+        if (this._checkNodeOn()) {
             return;
         }
 
@@ -152,7 +152,7 @@ class OrgChart {
         let removeObj = [];
         let changeObj = [];
 
-        if (this._checkNode(e.target)) {
+        if (this._checkNodeOn(e.target)) {
             return;
         }
 
@@ -260,7 +260,7 @@ class OrgChart {
 
         findTarget(target);
 
-        if (this._checkNode()) {
+        if (this._checkNodeOn()) {
             return (target.style.background = '');
         }
 
@@ -626,16 +626,8 @@ class OrgChart {
         });
     }
 
-    printData() {
-        console.log(this.data);
-    }
-
-    printTree() {
-        console.log(this.tree);
-    }
-
-    printExcludedData() {
-        console.log(this.excludedData);
+    getExcludedData() {
+        return this.excludedData;
     }
 }
 
@@ -740,4 +732,4 @@ const orgChart = new OrgChart({
     }
 });
 
-orgChart.printData();
+console.log(orgChart.getExcludedData());
