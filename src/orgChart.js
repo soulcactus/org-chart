@@ -3,13 +3,15 @@ class OrgChart {
         const initialData = {
             id: 0,
             name: 'name',
-            parentId: null
+            parentId: null,
+            sequenceId: 0
         };
 
         const initialProfile = {
             name: 'name'
         };
 
+        const excludedData = [];
         let opts;
         let container;
         let data;
@@ -20,42 +22,44 @@ class OrgChart {
         if (!opts['data']) {
             data = [initialData];
         } else {
+            const arr = [];
+
             data = opts['data'].sort((a, b) => a['id'] - b['id']);
 
             data.forEach((item, index) => {
+                const id = item['id'];
+                const parentId = item['parentId'];
+                const sequenceId = item['sequenceId'];
+                const parentExist = data.some((val) => parentId === val['id']);
+
                 if (
                     !item.hasOwnProperty('id') ||
                     !item.hasOwnProperty('parentId') ||
-                    typeof item['id'] !== 'number' ||
-                    (item['parentId'] !== null &&
-                        typeof item['parentId'] !== 'number') ||
-                    Number.isNaN(item['id']) ||
-                    Number.isNaN(item['parentId'])
+                    !item.hasOwnProperty('sequenceId') ||
+                    typeof id !== 'number' ||
+                    (parentId !== null && typeof parentId !== 'number') ||
+                    typeof sequenceId !== 'number' ||
+                    Number.isNaN(id) ||
+                    Number.isNaN(parentId) ||
+                    Number.isNaN(sequenceId) ||
+                    id === parentId ||
+                    (index !== data.length - 1 &&
+                        data[index]['id'] === data[index + 1]['id']) ||
+                    (parentId !== null && !parentExist)
                 ) {
-                    data.splice(index, 1);
-                }
-
-                if (
-                    index !== data.length - 1 &&
-                    data[index]['id'] === data[index + 1]['id']
-                ) {
-                    data.splice(index, 1);
-                }
-
-                if (
-                    item['parentId'] !== null &&
-                    !data.some((val) => item['parentId'] === val['id'])
-                ) {
-                    data.splice(index, 1);
+                    excludedData.push(item);
+                } else {
+                    arr.push(item);
                 }
             });
+
+            data = arr;
 
             if (!data.length) {
                 data = [initialData];
             }
         }
 
-        data.forEach((item) => (item['sequenceId'] = item['id']));
         container = document.querySelector(opts['container']);
 
         if (data.length !== options['data'].length) {
@@ -70,17 +74,18 @@ class OrgChart {
             );
         }
 
-        tree = this._treeModel(data);
+        this.container = container;
         this.usePhoto = opts['usePhoto'];
         this.profile = opts['profile'] || initialProfile;
+        this.data = data;
         this.onAddNode = options['onAddNode'];
         this.onRemoveNode = options['onRemoveNode'];
         this.onModifyNode = options['onModifyNode'];
-        this._printTree(tree, container);
-        this.container = container;
-        this.data = data;
+        tree = this._treeModel(data);
         this.tree = tree;
+        this._printTree(tree, container);
         this.id = data[data.length - 1]['id'];
+        this.excludedData = excludedData;
         this._addEvent();
         this._moveEvent();
     }
@@ -621,9 +626,16 @@ class OrgChart {
         });
     }
 
-    print() {
+    printData() {
         console.log(this.data);
+    }
+
+    printTree() {
         console.log(this.tree);
+    }
+
+    printExcludedData() {
+        console.log(this.excludedData);
     }
 }
 
@@ -642,61 +654,79 @@ const orgChart = new OrgChart({
             name: 'administrator1',
             tel: '010-1234-5678',
             title: 'CEO',
-            parentId: null
+            parentId: null,
+            sequenceId: 0
         },
         {
             id: 1,
             name: 'sibling1',
-            parentId: 0
+            parentId: 0,
+            sequenceId: 0
         },
         {
             id: '2',
             name: 'sibling2',
-            parentId: 0
+            parentId: 0,
+            sequenceId: 1
         },
         {
             id: 3,
             name: 'sibling3',
-            parentId: 0
+            parentId: 0,
+            sequenceId: 2
         },
         {
             id: 4,
             name: 'child1',
-            parentId: 1
+            parentId: 1,
+            sequenceId: 0
         },
         {
             id: 5,
             name: 'child2',
-            parentId: 1
+            parentId: 1,
+            sequenceId: 1
         },
         {
             id: 6,
-            name: 'child3'
+            name: 'child3',
+            sequenceId: 0
         },
         {
             id: 7,
             name: 'child5',
-            parentId: 30
+            parentId: 30,
+            sequenceId: 0
         },
         {
             id: 8,
             name: 'child6',
-            parentId: 3
+            parentId: 3,
+            sequenceId: '0'
         },
         {
             id: 9,
             name: 'child4',
-            parentId: 1
+            parentId: 1,
+            sequenceId: 0
         },
         {
             id: 10,
             name: 'child7',
-            parentId: 9
+            parentId: 9,
+            sequenceId: 1
         },
         {
             id: 11,
             name: 'child8',
-            parentId: 9
+            parentId: 9,
+            sequenceId: 2
+        },
+        {
+            id: 12,
+            name: 'child9',
+            parentId: 12,
+            sequenceId: 0
         }
     ],
     onAddNode: function(node) {
@@ -710,4 +740,4 @@ const orgChart = new OrgChart({
     }
 });
 
-orgChart.print();
+orgChart.printData();
