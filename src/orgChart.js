@@ -121,7 +121,16 @@ class OrgChart {
         const profile = this.profile;
         const data = this.data;
         const id = ++this.id;
-        const parentId = Number(e.target.parentNode.getAttribute('id'));
+        const parent = e.target.parentNode;
+        const nextSibling = parent.parentNode.nextElementSibling;
+        const siblings = nextSibling
+            ? nextSibling.nextElementSibling.querySelectorAll('.member')
+            : null;
+        const parentId = Number(parent.getAttribute('id'));
+        const sequenceId = siblings
+            ? Number(siblings[siblings.length - 1].getAttribute('sequenceId')) +
+              1
+            : 0;
         let tree = this.tree;
         let obj = {};
 
@@ -131,7 +140,7 @@ class OrgChart {
 
         obj['id'] = id;
         obj['parentId'] = parentId;
-        // obj['sequenceId'] = 0;
+        obj['sequenceId'] = sequenceId;
 
         for (const [key, value] of Object.entries(profile)) {
             obj[key] = value;
@@ -470,48 +479,20 @@ class OrgChart {
 
         const traverse = (nodes, item, index) => {
             const itemParentId = item['parentId'];
-            let itemSequenceId = item['sequenceId'];
 
             if (nodes instanceof Array) {
                 return nodes.some((node) => {
                     const nodeId = node['id'];
                     let nodeChildren;
-                    let sequenceId;
 
                     if (nodeId === itemParentId) {
                         node['children'] = node['children'] || [];
                         nodeChildren = node['children'];
                         nodeChildren.push(arr.splice(index, 1)[0]);
 
-                        nodeChildren.sort(
+                        return nodeChildren.sort(
                             (a, b) => a['sequenceId'] - b['sequenceId']
                         );
-
-                        sequenceId =
-                            nodeChildren[nodeChildren.length - 1][
-                                'sequenceId'
-                            ] + 1;
-
-                        console.log(itemSequenceId);
-
-                        if (itemSequenceId === undefined) {
-                            if (nodeChildren.length >= 2) {
-                                data.forEach(
-                                    (value) =>
-                                        (value['sequenceId'] = sequenceId)
-                                );
-
-                                itemSequenceId = sequenceId;
-                            } else {
-                                data.forEach(
-                                    (value) => (value['sequenceId'] = 0)
-                                );
-
-                                itemSequenceId = 0;
-                            }
-                        }
-
-                        return itemSequenceId === undefined;
                     }
 
                     return traverse(node['children'], item, index);
