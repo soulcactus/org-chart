@@ -123,14 +123,17 @@ class OrgChart {
         const id = ++this.id;
         const parent = e.target.parentNode;
         const nextSibling = parent.parentNode.nextElementSibling;
+        const parentId = Number(parent.getAttribute('id'));
+
         const siblings = nextSibling
             ? nextSibling.nextElementSibling.querySelectorAll('.member')
             : null;
-        const parentId = Number(parent.getAttribute('id'));
+
         const sequenceId = siblings
             ? Number(siblings[siblings.length - 1].getAttribute('sequenceId')) +
               1
             : 0;
+
         let tree = this.tree;
         let obj = {};
 
@@ -159,81 +162,98 @@ class OrgChart {
         console.time('removeNode');
         const container = this.container;
         const id = Number(e.target.parentNode.getAttribute('id'));
+        const sequenceId1 = Number(
+            e.target.parentNode.getAttribute('sequenceId')
+        );
         const onRemoveNode = this.onRemoveNode;
         let data = this.data;
         let tree = this.tree;
         let removeList = [];
-        let newParentId;
-        let newsequenceId;
         let removeObj = [];
         let changeObj = [];
+        let newParentId;
+        let newsequenceId;
+        let removeTop;
+
+        removeTop = (arr, id) => {
+            arr.forEach((item) => {
+                const itemId = item['id'];
+                const children = item['children'];
+                let parentId = item['parentId'];
+
+                if ((parentId !== null && itemId === id) || parentId === id) {
+                    removeList.push(itemId);
+                    removeObj.push(item);
+
+                    if (parentId === id && children) {
+                        removeTop(children, item['id']);
+                    }
+                }
+
+                if (children) {
+                    removeTop(children, id);
+                }
+            });
+        };
 
         if (this._checkNodeOn(e.target)) {
             return;
         }
 
-        const removeTop = (arr, id) => {
+        (function callee(arr, id, parent = null, child = null) {
             arr.forEach((item) => {
-                if (
-                    (item['parentId'] !== null && item['id'] === id) ||
-                    item['parentId'] === id
-                ) {
-                    removeList.push(item['id']);
-                    removeObj.push(item);
+                const itemId = item['id'];
+                const parentId = item['parentId'];
+                const sequenceId = item['sequenceId'];
+                const children = item['children'];
 
-                    if (item['parentId'] === id && item['children']) {
-                        removeTop(item['children'], item['id']);
-                    }
-                }
-
-                if (item['children']) {
-                    removeTop(item['children'], id);
-                }
-            });
-        };
-
-        const remove = (arr, id, parent = null, child = null) => {
-            arr.forEach((item) => {
-                if (item['parentId'] !== null && !parent) {
-                    if (item['id'] === id) {
-                        newParentId = parent || item['parentId'];
-                        newsequenceId = child || item['sequenceId'];
+                if (parentId !== null && !parent) {
+                    if (itemId === id) {
+                        newParentId = parent || parentId;
+                        newsequenceId = child || id + Number(sequenceId);
 
                         data.forEach((value, idx) => {
-                            if (value['id'] === item['id']) {
+                            const valueId = value['id'];
+
+                            if (valueId === itemId) {
                                 data.splice(idx, 1);
                                 removeObj.push(item);
                             }
                         });
-                    } else if (item['parentId'] === id) {
+                    } else if (parentId === id) {
                         data.forEach((value) => {
-                            if (value['id'] === item['id']) {
+                            const valueId = value['id'];
+
+                            if (valueId === itemId) {
+                                newsequenceId =
+                                    sequenceId1 + Number(sequenceId);
+                                console.log(parent);
                                 value['parentId'] = newParentId;
                                 value['sequenceId'] = newsequenceId;
                                 changeObj.push(value);
                             }
                         });
+                    } else if (newParentId === parentId) {
+                        console.log(item.name);
+                        data.forEach((value) => {
+                            if (value['id'] === item['id']) {
+                                value['sequenceId'] = ++newsequenceId;
+                            }
+                        });
                     }
 
-                    if (item['parentId'] === id && item['children']) {
-                        remove(
-                            item['children'],
-                            item['id'],
-                            item['id'],
-                            item['sequenceId']
-                        );
+                    if (parentId === id && children) {
+                        callee(children, itemId, itemId, sequenceId);
                     }
-                } else if (item['id'] === id) {
+                } else if (itemId === id) {
                     return removeTop(tree, id);
                 }
 
-                if (item['children'] && !parent) {
-                    remove(item['children'], id);
+                if (children && !parent) {
+                    callee(children, id);
                 }
             });
-        };
-
-        remove(tree, id);
+        })(tree, id);
 
         if (removeList.length) {
             data = data.filter((item) => !removeList.includes(item['id']));
@@ -687,7 +707,7 @@ const orgChart = new OrgChart({
             id: 3,
             name: 'sibling3',
             parentId: 0,
-            sequenceId: 2
+            sequenceId: 1
         },
         {
             id: 4,
@@ -699,7 +719,7 @@ const orgChart = new OrgChart({
             id: 5,
             name: 'child2',
             parentId: 1,
-            sequenceId: 1
+            sequenceId: 2
         },
         {
             id: 6,
@@ -722,19 +742,19 @@ const orgChart = new OrgChart({
             id: 9,
             name: 'child4',
             parentId: 1,
-            sequenceId: 0
+            sequenceId: 1
         },
         {
             id: 10,
             name: 'child7',
             parentId: 9,
-            sequenceId: 1
+            sequenceId: 0
         },
         {
             id: 11,
             name: 'child8',
             parentId: 9,
-            sequenceId: 2
+            sequenceId: 1
         },
         {
             id: 12,
