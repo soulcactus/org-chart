@@ -1,93 +1,12 @@
 class OrgChart {
-    constructor(options) {
-        const initialData = {
-            id: 0,
-            name: 'name',
-            parentId: null,
-            sequenceId: 0
-        };
-
-        const initialProfile = {
-            name: 'name'
-        };
-
-        const excludedData = [];
-        let opts;
-        let container;
-        let data;
-        let tree;
-
-        opts = JSON.parse(JSON.stringify(options));
-
-        if (!opts['data']) {
-            data = [initialData];
-        } else {
-            const arr = [];
-
-            data = opts['data'].sort((a, b) => a['id'] - b['id']);
-
-            data.forEach((item, index) => {
-                const id = item['id'];
-                const parentId = item['parentId'];
-                const sequenceId = item['sequenceId'];
-                const parentExist = data.some((val) => parentId === val['id']);
-
-                if (
-                    !item.hasOwnProperty('id') ||
-                    !item.hasOwnProperty('parentId') ||
-                    !item.hasOwnProperty('sequenceId') ||
-                    typeof id !== 'number' ||
-                    (parentId !== null && typeof parentId !== 'number') ||
-                    typeof sequenceId !== 'number' ||
-                    Number.isNaN(id) ||
-                    Number.isNaN(parentId) ||
-                    Number.isNaN(sequenceId) ||
-                    id === parentId ||
-                    (index !== data.length - 1 &&
-                        data[index]['id'] === data[index + 1]['id']) ||
-                    (parentId !== null && !parentExist)
-                ) {
-                    excludedData.push(item);
-                } else {
-                    arr.push(item);
-                }
-            });
-
-            data = arr;
-
-            if (!data.length) {
-                data = [initialData];
-            }
-        }
-
-        container = document.querySelector(opts['container']);
-
-        if (data.length !== options['data'].length) {
-            console.warn(
-                "[OrgChart] Warning: Some data items have invalid values or do not have required properties. They were excluded. You'd better check the data."
-            );
-        }
-
+    constructor(container) {
         if (!container) {
             return console.error(
                 "[OrgChart] Error: 'container' property is null. 'container' property of the OrgChart option must be set."
             );
+        } else {
+            this.container = document.querySelector(container);
         }
-
-        this.container = container;
-        this.usePhoto = opts['usePhoto'];
-        this.profile = opts['profile'] || initialProfile;
-        this.data = data;
-        this.onAddNode = options['onAddNode'];
-        this.onModifyNode = options['onModifyNode'];
-        this.onRemoveNode = options['onRemoveNode'];
-        tree = this._treeModel(data);
-        this.tree = tree;
-        this._printTree(tree, container);
-        this.id = data[data.length - 1]['id'];
-        this.excludedData = excludedData;
-        this._addEvent();
-        this._moveEvent();
     }
 
     _checkNodeOn(el) {
@@ -164,7 +83,7 @@ class OrgChart {
         const parentNode = e.target.parentNode;
         const id = Number(parentNode.getAttribute('id'));
         const sequenceId = Number(parentNode.getAttribute('sequenceId'));
-        const onRemoveNode = this.onRemoveNode;
+        const remove = this.remove;
         let data = this.data;
         let tree = this.tree;
         let removeList = [];
@@ -226,7 +145,6 @@ class OrgChart {
                             if (valueId === itemId) {
                                 newsequenceId =
                                     sequenceId + Number(itemSequenceId);
-                                console.log(parent);
                                 value['parentId'] = newParentId;
                                 value['sequenceId'] = newsequenceId;
                                 changeObj.push(value);
@@ -267,12 +185,12 @@ class OrgChart {
         this._printTree(tree, container);
         this._addEvent();
 
-        if (onRemoveNode) {
+        if (remove) {
             console.log('삭제');
 
             changeObj.length
-                ? onRemoveNode([{ ...removeObj }, { ...changeObj }])
-                : onRemoveNode([...removeObj]);
+                ? remove([{ ...removeObj }, { ...changeObj }])
+                : remove([...removeObj]);
         }
 
         console.timeEnd('removeNode');
@@ -382,44 +300,49 @@ class OrgChart {
         const saveBtns = document.querySelectorAll('.save-btn');
         const profile = this.profile;
         const data = this.data;
-        const onAddNode = this.onAddNode;
-        const onModifyNode = this.onModifyNode;
 
         saveBtns.forEach((item) => {
             const forms = item.parentNode.querySelectorAll('input');
 
-            item.addEventListener('click', function() {
-                const id = Number(item.parentNode.getAttribute('id'));
+            item.addEventListener(
+                'click',
+                function() {
+                    const add = this.add;
+                    const modify = this.modify;
+                    const id = Number(item.parentNode.getAttribute('id'));
 
-                forms.forEach((value) => {
-                    const span = value.previousElementSibling;
-                    const form = value.name.replace(/[0-9]/g, '');
+                    forms.forEach((value) => {
+                        const span = value.previousElementSibling;
+                        const form = value.name.replace(/[0-9]/g, '');
 
-                    span.textContent = value.value || profile[form];
-                    span.style.display = 'block';
-                    value.style.display = 'none';
-                });
-
-                item.style.display = 'none';
-
-                if (item.getAttribute('modified') && onModifyNode) {
-                    console.log('수정', id);
-                    data.forEach((value) => {
-                        if (value['id'] === id) {
-                            onModifyNode(value);
-                        }
+                        span.textContent = value.value || profile[form];
+                        span.style.display = 'block';
+                        value.style.display = 'none';
                     });
-                } else if (onAddNode) {
-                    console.log('추가');
-                    data.forEach((value) => {
-                        if (value['id'] === id) {
-                            onAddNode(value);
-                        }
-                    });
-                }
 
-                item.removeAttribute('modified');
-            });
+                    item.style.display = 'none';
+
+                    if (item.getAttribute('modified') && modify) {
+                        console.log('수정');
+
+                        data.forEach((value) => {
+                            if (value['id'] === id) {
+                                modify(value);
+                            }
+                        });
+                    } else if (add) {
+                        console.log('추가');
+
+                        data.forEach((value) => {
+                            if (value['id'] === id) {
+                                add(value);
+                            }
+                        });
+                    }
+
+                    item.removeAttribute('modified');
+                }.bind(this)
+            );
         });
     }
 
@@ -669,110 +592,203 @@ class OrgChart {
         });
     }
 
+    draw(data, options) {
+        const initialData = {
+            id: 0,
+            name: 'name',
+            parentId: null,
+            sequenceId: 0
+        };
+
+        const initialProfile = {
+            name: 'name'
+        };
+
+        const excludedData = [];
+        let treeData = JSON.parse(JSON.stringify(data));
+        let opts = JSON.parse(JSON.stringify(options));
+        let tree;
+
+        if (!treeData) {
+            treeData = [initialData];
+        } else {
+            const arr = [];
+
+            treeData = treeData.sort((a, b) => a['id'] - b['id']);
+
+            treeData.forEach((item, index) => {
+                const id = item['id'];
+                const parentId = item['parentId'];
+                const sequenceId = item['sequenceId'];
+                const parentExist = data.some((val) => parentId === val['id']);
+
+                if (
+                    !item.hasOwnProperty('id') ||
+                    !item.hasOwnProperty('parentId') ||
+                    !item.hasOwnProperty('sequenceId') ||
+                    typeof id !== 'number' ||
+                    (parentId !== null && typeof parentId !== 'number') ||
+                    typeof sequenceId !== 'number' ||
+                    Number.isNaN(id) ||
+                    Number.isNaN(parentId) ||
+                    Number.isNaN(sequenceId) ||
+                    id === parentId ||
+                    (index !== data.length - 1 &&
+                        data[index]['id'] === data[index + 1]['id']) ||
+                    (parentId !== null && !parentExist)
+                ) {
+                    excludedData.push(item);
+                } else {
+                    arr.push(item);
+                }
+            });
+
+            treeData = arr;
+
+            if (!treeData.length) {
+                treeData = [initialData];
+            }
+        }
+
+        if (treeData.length !== data.length) {
+            console.warn(
+                "[OrgChart] Warning: Some data items have invalid values or do not have required properties. They were excluded. You'd better check the data."
+            );
+        }
+
+        this.usePhoto = opts['usePhoto'];
+        this.profile = opts['profile'] || initialProfile;
+        this.data = treeData;
+        tree = this._treeModel(treeData);
+        this.tree = tree;
+        this._printTree(tree, container);
+        this.id = treeData[treeData.length - 1]['id'];
+        this.excludedData = excludedData;
+        this._addEvent();
+        this._moveEvent();
+    }
+
+    add(func) {
+        this.add = func;
+    }
+
+    remove(func) {
+        this.remove = func;
+    }
+
+    modify(func) {
+        this.modify = func;
+    }
+
     getExcludedData() {
         return this.excludedData;
     }
 }
 
-const orgChart = new OrgChart({
-    container: '#container',
+const data = [
+    {
+        id: 0,
+        name: 'administrator1',
+        tel: '010-1234-5678',
+        title: 'CEO',
+        parentId: null,
+        sequenceId: 0
+    },
+    {
+        id: 1,
+        name: 'sibling1',
+        parentId: 0,
+        sequenceId: 0
+    },
+    {
+        id: '2',
+        name: 'sibling2',
+        parentId: 0,
+        sequenceId: 1
+    },
+    {
+        id: 3,
+        name: 'sibling3',
+        parentId: 0,
+        sequenceId: 1
+    },
+    {
+        id: 4,
+        name: 'child1',
+        parentId: 1,
+        sequenceId: 0
+    },
+    {
+        id: 5,
+        name: 'child2',
+        parentId: 1,
+        sequenceId: 2
+    },
+    {
+        id: 6,
+        name: 'child3',
+        sequenceId: 0
+    },
+    {
+        id: 7,
+        name: 'child5',
+        parentId: 30,
+        sequenceId: 0
+    },
+    {
+        id: 8,
+        name: 'child6',
+        parentId: 3,
+        sequenceId: '0'
+    },
+    {
+        id: 9,
+        name: 'child4',
+        parentId: 1,
+        sequenceId: 1
+    },
+    {
+        id: 10,
+        name: 'child7',
+        parentId: 9,
+        sequenceId: 0
+    },
+    {
+        id: 11,
+        name: 'child8',
+        parentId: 9,
+        sequenceId: 1
+    },
+    {
+        id: 12,
+        name: 'child9',
+        parentId: 12,
+        sequenceId: 0
+    }
+];
+
+const orgChart = new OrgChart('#container');
+
+orgChart.draw(data, {
     usePhoto: true,
     profile: {
         name: 'name',
         tel: '000-0000-0000',
         title: 'none',
         photo: './images/profile.png'
-    },
-    data: [
-        {
-            id: 0,
-            name: 'administrator1',
-            tel: '010-1234-5678',
-            title: 'CEO',
-            parentId: null,
-            sequenceId: 0
-        },
-        {
-            id: 1,
-            name: 'sibling1',
-            parentId: 0,
-            sequenceId: 0
-        },
-        {
-            id: '2',
-            name: 'sibling2',
-            parentId: 0,
-            sequenceId: 1
-        },
-        {
-            id: 3,
-            name: 'sibling3',
-            parentId: 0,
-            sequenceId: 1
-        },
-        {
-            id: 4,
-            name: 'child1',
-            parentId: 1,
-            sequenceId: 0
-        },
-        {
-            id: 5,
-            name: 'child2',
-            parentId: 1,
-            sequenceId: 2
-        },
-        {
-            id: 6,
-            name: 'child3',
-            sequenceId: 0
-        },
-        {
-            id: 7,
-            name: 'child5',
-            parentId: 30,
-            sequenceId: 0
-        },
-        {
-            id: 8,
-            name: 'child6',
-            parentId: 3,
-            sequenceId: '0'
-        },
-        {
-            id: 9,
-            name: 'child4',
-            parentId: 1,
-            sequenceId: 1
-        },
-        {
-            id: 10,
-            name: 'child7',
-            parentId: 9,
-            sequenceId: 0
-        },
-        {
-            id: 11,
-            name: 'child8',
-            parentId: 9,
-            sequenceId: 1
-        },
-        {
-            id: 12,
-            name: 'child9',
-            parentId: 12,
-            sequenceId: 0
-        }
-    ],
-    onAddNode: function(node) {
-        console.log(node);
-    },
-    onRemoveNode: function(node) {
-        console.log(node);
-    },
-    onModifyNode: function(node) {
-        console.log(node);
     }
+});
+
+orgChart.add((node) => {
+    console.log(node);
+});
+
+orgChart.remove((node) => {
+    console.log(node);
+});
+
+orgChart.modify((node) => {
+    console.log(node);
 });
 
 console.log(orgChart.getExcludedData());
