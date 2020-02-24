@@ -161,10 +161,9 @@ class OrgChart {
     _removeNode(e) {
         console.time('removeNode');
         const container = this.container;
-        const id = Number(e.target.parentNode.getAttribute('id'));
-        const sequenceId1 = Number(
-            e.target.parentNode.getAttribute('sequenceId')
-        );
+        const parentNode = e.target.parentNode;
+        const id = Number(parentNode.getAttribute('id'));
+        const sequenceId = Number(parentNode.getAttribute('sequenceId'));
         const onRemoveNode = this.onRemoveNode;
         let data = this.data;
         let tree = this.tree;
@@ -204,13 +203,13 @@ class OrgChart {
             arr.forEach((item) => {
                 const itemId = item['id'];
                 const parentId = item['parentId'];
-                const sequenceId = item['sequenceId'];
+                const itemSequenceId = item['sequenceId'];
                 const children = item['children'];
 
                 if (parentId !== null && !parent) {
                     if (itemId === id) {
                         newParentId = parent || parentId;
-                        newsequenceId = child || id + Number(sequenceId);
+                        newsequenceId = child || id + Number(itemSequenceId);
 
                         data.forEach((value, idx) => {
                             const valueId = value['id'];
@@ -226,7 +225,7 @@ class OrgChart {
 
                             if (valueId === itemId) {
                                 newsequenceId =
-                                    sequenceId1 + Number(sequenceId);
+                                    sequenceId + Number(itemSequenceId);
                                 console.log(parent);
                                 value['parentId'] = newParentId;
                                 value['sequenceId'] = newsequenceId;
@@ -234,16 +233,18 @@ class OrgChart {
                             }
                         });
                     } else if (newParentId === parentId) {
-                        console.log(item.name);
                         data.forEach((value) => {
-                            if (value['id'] === item['id']) {
+                            const valueId = value['id'];
+
+                            if (valueId === itemId) {
                                 value['sequenceId'] = ++newsequenceId;
+                                changeObj.push(value);
                             }
                         });
                     }
 
                     if (parentId === id && children) {
-                        callee(children, itemId, itemId, sequenceId);
+                        callee(children, itemId, itemId, itemSequenceId);
                     }
                 } else if (itemId === id) {
                     return removeTop(tree, id);
