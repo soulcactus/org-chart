@@ -12,26 +12,32 @@ class OrgChart {
     _checkNodeOn(el) {
         const className = `input[name*=${Object.keys(this.profile)[0]}]`;
         const form = document.querySelectorAll(className);
+        const id = el ? el.parentNode.getAttribute('id') : null;
+        let focusItem;
 
         const checkNode = Array.from(form).some((item) => {
             const itemStyle = item.getAttribute('style');
 
             if (!itemStyle) {
-                item.focus();
-            }
+                focusItem = item;
 
-            return !itemStyle;
+                return !itemStyle;
+            } else {
+                return false;
+            }
         });
 
-        let style;
+        if (checkNode) {
+            if (Number(id) === this.id) {
+                return false;
+            } else {
+                focusItem.focus();
 
-        if (el) {
-            style = !el.parentNode
-                .querySelector(className)
-                .getAttribute('style');
+                return true;
+            }
+        } else {
+            return false;
         }
-
-        return el && !style ? false : checkNode;
     }
 
     _addNode(e) {
@@ -39,10 +45,9 @@ class OrgChart {
         const container = this.container;
         const profile = this.profile;
         const data = this.data;
-        const id = ++this.id;
         const parent = e.target.parentNode;
+        const parentId = parent.getAttribute('id');
         const nextSibling = parent.parentNode.nextElementSibling;
-        const parentId = Number(parent.getAttribute('id'));
 
         const siblings = nextSibling
             ? nextSibling.nextElementSibling.querySelectorAll('.member')
@@ -55,13 +60,16 @@ class OrgChart {
 
         let tree = this.tree;
         let obj = {};
+        let id = this.id;
 
         if (this._checkNodeOn()) {
             return;
+        } else {
+            id = ++this.id;
         }
 
         obj['id'] = id;
-        obj['parentId'] = parentId;
+        obj['parentId'] = Number(parentId);
         obj['sequenceId'] = sequenceId;
 
         for (const [key, value] of Object.entries(profile)) {
@@ -199,8 +207,8 @@ class OrgChart {
     _moveNode(e, dragged = null) {
         console.time('moveNode');
         const container = this.container;
-        const data = this.data;
         const profile = this.profile;
+        const data = this.data;
         let tree = this.tree;
         let sequenceId;
         let target = e.target;
@@ -213,6 +221,9 @@ class OrgChart {
             }
         };
 
+        const parentId = target.getAttribute('parentId');
+        const id = target.getAttribute('id');
+
         findTarget(target);
 
         if (this._checkNodeOn()) {
@@ -220,45 +231,44 @@ class OrgChart {
         }
 
         const checkParent = (function callee(parent) {
-            const draggedId = Number(dragged.getAttribute('id'));
+            const draggedId = dragged.getAttribute('id');
 
             return data.some((item) => {
-                const parentId = item['parentId'];
+                const itemParentId = item['parentId'];
+                const itemId = item['id'];
 
                 if (
                     (dragged.getAttribute('parentId') === 'null' &&
                         dragged.parentNode.parentNode.querySelector(
-                            `input[name=${
-                                Object.keys(profile)[0]
-                            }${target.getAttribute('id')}]`
+                            `input[name=${Object.keys(profile)[0]}${id}]`
                         )) ||
-                    (parent === item['id'] && parent === draggedId)
+                    (parent === itemId && parent === Number(draggedId))
                 ) {
                     return true;
-                } else if (parent === item['id'] && parentId) {
-                    return callee(parentId);
+                } else if (parent === itemId && itemParentId) {
+                    return callee(itemParentId);
                 }
             });
-        })(Number(target.getAttribute('parentId')));
+        })(Number(parentId));
 
         if (
             !target ||
-            target.getAttribute('id') === dragged.getAttribute('id') ||
-            target.getAttribute('parentId') === dragged.getAttribute('id') ||
+            id === draggedId ||
+            parentId === draggedId ||
             checkParent
         ) {
             return (target.style.background = '');
         }
 
         data.forEach((item) => {
-            if (item['parentId'] === Number(target.getAttribute('id'))) {
+            if (item['parentId'] === Number(id)) {
                 sequenceId = item['sequenceId'];
             }
         });
 
         data.forEach((item) => {
-            if (item['id'] === Number(dragged.getAttribute('id'))) {
-                item['parentId'] = Number(target.getAttribute('id'));
+            if (item['id'] === Number(draggedId)) {
+                item['parentId'] = Number(id);
                 item['sequenceId'] = sequenceId + 1;
             }
         });
@@ -472,6 +482,7 @@ class OrgChart {
             const addBtn = document.createElement('button');
             const removeBtn = document.createElement('button');
             const saveBtn = document.createElement('button');
+            const id = item['id'];
 
             groupColumn.className = 'group-column';
             lineBox.className = 'line-box';
@@ -521,10 +532,10 @@ class OrgChart {
                     profileBox.appendChild(photo);
                 } else {
                     form.type = 'text';
-                    form.name = `${key}${item['id']}`;
+                    form.name = `${key}${id}`;
                     form.placeholder = key;
                     span.textContent = item[key] || value;
-                    added && item['id'] === this.id
+                    added && id === this.id
                         ? (span.style.display = 'none')
                         : (form.style.display = 'none');
                     list.appendChild(span);
@@ -542,7 +553,7 @@ class OrgChart {
             lineBox.appendChild(lineLeft);
             lineBox.appendChild(lineRight);
 
-            if (added && item['id'] === this.id) {
+            if (added && id === this.id) {
                 saveBtn.style.display = 'block';
             }
 
@@ -650,7 +661,7 @@ class OrgChart {
             }
         }
 
-        if (treeData.length !== data.length) {
+        if (data && treeData.length !== data.length) {
             console.warn(
                 "[OrgChart] Warning: Some data items have invalid values or do not have required properties. They were excluded. You'd better check the data."
             );
