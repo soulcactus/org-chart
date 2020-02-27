@@ -48,6 +48,7 @@ class OrgChart {
         const parent = e.target.parentNode;
         const parentId = parent.getAttribute('id');
         const nextSibling = parent.parentNode.nextElementSibling;
+        const obj = {};
 
         const siblings = nextSibling
             ? nextSibling.nextElementSibling.querySelectorAll('.member')
@@ -59,7 +60,6 @@ class OrgChart {
             : 0;
 
         let tree = this.tree;
-        let obj = {};
         let id = this.id;
 
         if (this._checkNodeOn()) {
@@ -92,16 +92,15 @@ class OrgChart {
         const id = Number(parentNode.getAttribute('id'));
         const sequenceId = Number(parentNode.getAttribute('sequenceId'));
         const remove = this.remove;
+        const removeList = [];
+        const removeObj = [];
+        const changeObj = [];
         let data = this.data;
         let tree = this.tree;
-        let removeList = [];
-        let removeObj = [];
-        let changeObj = [];
         let newParentId;
         let newsequenceId;
-        let removeTop;
 
-        removeTop = (arr, id) => {
+        const removeTop = (arr, id) => {
             arr.forEach((item) => {
                 const itemId = item['id'];
                 const children = item['children'];
@@ -207,49 +206,50 @@ class OrgChart {
     _moveNode(e, dragged = null) {
         console.time('moveNode');
         const container = this.container;
-        const profile = this.profile;
         const data = this.data;
+        const profile = this.profile;
+        const draggedParentId = dragged
+            ? dragged.getAttribute('parentId')
+            : null;
+        const draggedId = dragged ? Number(dragged.getAttribute('id')) : null;
         let tree = this.tree;
-        let sequenceId;
         let target = e.target;
+        let id;
+        let parentId;
+        let checkParent;
 
-        const findTarget = (el) => {
+        (function callee(el) {
             if (el) {
                 return el.className !== 'member'
-                    ? findTarget(el.parentNode)
+                    ? callee(el.parentNode)
                     : (target = el);
             }
-        };
+        })(target);
 
-        const parentId = target.getAttribute('parentId');
-        const id = target.getAttribute('id');
+        id = target.getAttribute('id');
+        parentId = target.getAttribute('parentId');
 
-        findTarget(target);
+        checkParent = (function callee(parent) {
+            return data.some((item) => {
+                const parentId = item['parentId'];
+
+                if (
+                    (draggedParentId === 'null' &&
+                        dragged.parentNode.parentNode.querySelector(
+                            `input[name=${Object.keys(profile)[0]}${id}]`
+                        )) ||
+                    (parent === item['id'] && parent === draggedId)
+                ) {
+                    return true;
+                } else if (parent === item['id'] && parentId) {
+                    return callee(parentId);
+                }
+            });
+        })(Number(parentId));
 
         if (this._checkNodeOn()) {
             return (target.style.background = '');
         }
-
-        const checkParent = (function callee(parent) {
-            const draggedId = dragged.getAttribute('id');
-
-            return data.some((item) => {
-                const itemParentId = item['parentId'];
-                const itemId = item['id'];
-
-                if (
-                    (dragged.getAttribute('parentId') === 'null' &&
-                        dragged.parentNode.parentNode.querySelector(
-                            `input[name=${Object.keys(profile)[0]}${id}]`
-                        )) ||
-                    (parent === itemId && parent === Number(draggedId))
-                ) {
-                    return true;
-                } else if (parent === itemId && itemParentId) {
-                    return callee(itemParentId);
-                }
-            });
-        })(Number(parentId));
 
         if (
             !target ||
@@ -261,15 +261,17 @@ class OrgChart {
         }
 
         data.forEach((item) => {
-            if (item['parentId'] === Number(id)) {
-                sequenceId = item['sequenceId'];
-            }
-        });
+            const sequenceId = data.filter(
+                (value) => value['parentId'] === Number(id)
+            ).length;
 
-        data.forEach((item) => {
+            if (item['id'] === Number(id) || item['parentId'] === Number(id)) {
+                return;
+            }
+
             if (item['id'] === Number(draggedId)) {
                 item['parentId'] = Number(id);
-                item['sequenceId'] = sequenceId + 1;
+                item['sequenceId'] = sequenceId;
             }
         });
 
@@ -405,15 +407,13 @@ class OrgChart {
         });
 
         container.addEventListener('dragenter', function(e) {
-            const bgColor = (el) => {
+            (function callee(el) {
                 if (el) {
                     return el.className !== 'member'
-                        ? bgColor(el.parentNode)
+                        ? callee(el.parentNode)
                         : (el.style.background = 'red');
                 }
-            };
-
-            bgColor(e.target);
+            })(e.target);
         });
 
         container.addEventListener('dragleave', function(e) {
@@ -616,8 +616,8 @@ class OrgChart {
         };
 
         const excludedData = [];
+        const opts = JSON.parse(JSON.stringify(options));
         let treeData = JSON.parse(JSON.stringify(data));
-        let opts = JSON.parse(JSON.stringify(options));
         let tree;
 
         if (!treeData) {
@@ -645,7 +645,7 @@ class OrgChart {
                     Number.isNaN(sequenceId) ||
                     id === parentId ||
                     (index !== data.length - 1 &&
-                        data[index]['id'] === data[index + 1]['id']) ||
+                        data[index]['id'] === data[++index]['id']) ||
                     (parentId !== null && !parentExist)
                 ) {
                     excludedData.push(item);
