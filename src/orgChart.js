@@ -272,6 +272,10 @@ class OrgChart {
             if (item['id'] === Number(draggedId)) {
                 item['parentId'] = Number(id);
                 item['sequenceId'] = sequenceId;
+
+                data.filter((value) => value['parentId'] === Number(parentId))
+                    .sort((a, b) => a['sequenceId'] - b['sequenceId'])
+                    .forEach((value, index) => (value['sequenceId'] = index));
             }
         });
 
