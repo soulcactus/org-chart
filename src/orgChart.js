@@ -212,6 +212,8 @@ class OrgChart {
             ? dragged.getAttribute('parentId')
             : null;
         const draggedId = dragged ? Number(dragged.getAttribute('id')) : null;
+        const move = this.move;
+        const changeObj = [];
         let tree = this.tree;
         let target = e.target;
         let id;
@@ -272,13 +274,22 @@ class OrgChart {
             if (item['id'] === Number(draggedId)) {
                 item['parentId'] = Number(id);
                 item['sequenceId'] = sequenceId;
+                changeObj.push(item);
 
-                data.filter((value) => value['parentId'] === Number(parentId))
+                data.filter(
+                    (value) => value['parentId'] === Number(draggedParentId)
+                )
                     .sort((a, b) => a['sequenceId'] - b['sequenceId'])
-                    .forEach((value, index) => (value['sequenceId'] = index));
+                    .forEach((value, idx) => {
+                        if (value['sequenceId'] !== idx) {
+                            changeObj.push(value);
+                            value['sequenceId'] = idx;
+                        }
+                    });
             }
         });
 
+        move(changeObj);
         tree = this._treeModel(data);
         container.innerHTML = '';
         this.tree = tree;
@@ -695,6 +706,10 @@ class OrgChart {
         this.modify = func;
     }
 
+    move(func) {
+        this.move = func;
+    }
+
     getExcludedData() {
         return this.excludedData;
     }
@@ -803,6 +818,10 @@ orgChart.remove((node) => {
 });
 
 orgChart.modify((node) => {
+    console.log(node);
+});
+
+orgChart.move((node) => {
     console.log(node);
 });
 
