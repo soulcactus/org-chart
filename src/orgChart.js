@@ -12,23 +12,24 @@ class OrgChart {
     _checkNodeOn(el) {
         const className = `input[name*=${Object.keys(this.profile)[0]}]`;
         const form = document.querySelectorAll(className);
-        const id = el ? el.parentNode.getAttribute('id') : null;
+        const id = el ? el.parentElement.getAttribute('id') : null;
+        const modify = el
+            ? el.nextElementSibling.getAttribute('modified')
+            : null;
         let focusItem;
 
         const checkNode = Array.from(form).some((item) => {
             const itemStyle = item.getAttribute('style');
 
-            if (!itemStyle) {
+            if (itemStyle) {
                 focusItem = item;
-
-                return !itemStyle;
-            } else {
-                return false;
             }
+
+            return itemStyle;
         });
 
         if (checkNode) {
-            if (Number(id) === this.id) {
+            if (Number(id) === this.id || modify) {
                 return false;
             } else {
                 focusItem.focus();
@@ -45,9 +46,9 @@ class OrgChart {
         const container = this.container;
         const profile = this.profile;
         const data = this.data;
-        const parent = e.target.parentNode;
+        const parent = e.target.parentElement;
         const parentId = parent.getAttribute('id');
-        const nextSibling = parent.parentNode.nextElementSibling;
+        const nextSibling = parent.parentElement.nextElementSibling;
         const obj = {};
 
         const siblings = nextSibling
@@ -88,10 +89,10 @@ class OrgChart {
     _removeNode(e) {
         console.time('removeNode');
         const container = this.container;
-        const parentNode = e.target.parentNode;
+        const parentNode = e.target.parentElement;
         const id = Number(parentNode.getAttribute('id'));
         const sequenceId = Number(parentNode.getAttribute('sequenceId'));
-        const input = !parentNode.querySelector('input').getAttribute('style');
+        const input = parentNode.querySelector('input').getAttribute('style');
         const remove = this.remove;
         const removeList = [];
         const removeObj = [];
@@ -230,7 +231,7 @@ class OrgChart {
         (function callee(el) {
             if (el) {
                 return el.className !== 'member'
-                    ? callee(el.parentNode)
+                    ? callee(el.parentElement)
                     : (target = el);
             }
         })(target);
@@ -244,7 +245,7 @@ class OrgChart {
 
                 if (
                     (draggedParentId === 'null' &&
-                        dragged.parentNode.parentNode.querySelector(
+                        dragged.parentElement.parentElement.querySelector(
                             `input[name=${Object.keys(profile)[0]}${id}]`
                         )) ||
                     (parent === item['id'] && parent === draggedId)
@@ -313,7 +314,7 @@ class OrgChart {
         );
 
         form.forEach((item) => {
-            if (!item.getAttribute('style')) {
+            if (item.getAttribute('style')) {
                 item.focus();
             }
         });
@@ -336,14 +337,14 @@ class OrgChart {
         const data = this.data;
 
         saveBtns.forEach((item) => {
-            const forms = item.parentNode.querySelectorAll('input');
+            const forms = item.parentElement.querySelectorAll('input');
 
             item.addEventListener(
                 'click',
                 function() {
                     const add = this.add;
                     const modify = this.modify;
-                    const id = Number(item.parentNode.getAttribute('id'));
+                    const id = Number(item.parentElement.getAttribute('id'));
 
                     forms.forEach((value) => {
                         const span = value.previousElementSibling;
@@ -351,7 +352,7 @@ class OrgChart {
 
                         span.textContent = value.value || profile[form];
                         span.removeAttribute('style');
-                        value.style.display = 'none';
+                        value.removeAttribute('style');
                     });
 
                     item.style.display = 'none';
@@ -361,6 +362,12 @@ class OrgChart {
 
                         data.forEach((value) => {
                             if (value['id'] === id) {
+                                forms.forEach((val) => {
+                                    const form = val.name.replace(/[0-9]/g, '');
+
+                                    value[form] = val.value || profile[form];
+                                });
+
                                 modify(value);
                             }
                         });
@@ -384,26 +391,33 @@ class OrgChart {
         const span = document.querySelectorAll('.profile span');
 
         span.forEach((item) => {
-            const parent = item.parentNode.parentNode;
-            const saveBtn = parent.parentNode.parentNode.querySelector(
+            const parent = item.parentElement.parentElement;
+            const saveBtn = parent.parentElement.parentElement.querySelector(
                 '.save-btn'
             );
 
-            item.addEventListener('click', function() {
-                const spans = parent.querySelectorAll('span');
-                const forms = parent.querySelectorAll('input');
+            item.addEventListener(
+                'click',
+                function(e) {
+                    const spans = parent.querySelectorAll('span');
+                    const forms = parent.querySelectorAll('input');
 
-                spans.forEach((value) => (value.style.display = 'none'));
+                    if (this._checkNodeOn(e.target)) {
+                        return;
+                    }
 
-                forms.forEach((value) => {
-                    value.style.display = 'block';
-                    value.value = value.previousElementSibling.textContent;
-                });
+                    spans.forEach((value) => (value.style.display = 'none'));
 
-                item.nextElementSibling.focus();
-                saveBtn.style.display = 'block';
-                saveBtn.setAttribute('modified', true);
-            });
+                    forms.forEach((value) => {
+                        value.style.display = 'block';
+                        value.value = value.previousElementSibling.textContent;
+                    });
+
+                    item.nextElementSibling.focus();
+                    saveBtn.style.display = 'block';
+                    saveBtn.setAttribute('modified', true);
+                }.bind(this)
+            );
         });
     }
 
@@ -432,7 +446,7 @@ class OrgChart {
             (function callee(el) {
                 if (el) {
                     return el.className !== 'member'
-                        ? callee(el.parentNode)
+                        ? callee(el.parentElement)
                         : (el.style.background = 'red');
                 }
             })(e.target);
@@ -557,9 +571,12 @@ class OrgChart {
                     form.name = `${key}${id}`;
                     form.placeholder = key;
                     span.textContent = item[key] || value;
-                    added && id === this.id
-                        ? (span.style.display = 'none')
-                        : (form.style.display = 'none');
+
+                    if (added && id === this.id) {
+                        span.style.display = 'none';
+                        form.style.display = 'block';
+                    }
+
                     list.appendChild(span);
                     list.appendChild(form);
                     profile.appendChild(list);

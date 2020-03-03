@@ -82,12 +82,17 @@
     margin-bottom: 5px;
 }
 
+.profile-box li span {
+    word-break: break-all;
+}
+
 .profile-box li:not(:last-child) span {
     display: block;
     margin-bottom: 11px;
 }
 
 .profile input {
+    display: none;
     width: 90%;
     height: 10px;
     border: 1px solid #ddd;
