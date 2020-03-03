@@ -197,6 +197,8 @@ class OrgChart {
             console.log('삭제');
 
             if (input) {
+                --this.id;
+
                 return;
             }
 
