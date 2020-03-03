@@ -91,6 +91,7 @@ class OrgChart {
         const parentNode = e.target.parentNode;
         const id = Number(parentNode.getAttribute('id'));
         const sequenceId = Number(parentNode.getAttribute('sequenceId'));
+        const input = !parentNode.querySelector('input').getAttribute('style');
         const remove = this.remove;
         const removeList = [];
         const removeObj = [];
@@ -195,9 +196,13 @@ class OrgChart {
         if (remove) {
             console.log('삭제');
 
+            if (input) {
+                return;
+            }
+
             changeObj.length
                 ? remove([{ ...removeObj }, { ...changeObj }])
-                : remove([...removeObj]);
+                : remove({ ...removeObj });
         }
 
         console.timeEnd('removeNode');
@@ -343,7 +348,7 @@ class OrgChart {
                         const form = value.name.replace(/[0-9]/g, '');
 
                         span.textContent = value.value || profile[form];
-                        span.style.display = 'block';
+                        span.removeAttribute('style');
                         value.style.display = 'none';
                     });
 
