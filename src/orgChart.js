@@ -265,7 +265,8 @@ class OrgChart {
             !target ||
             id === draggedId ||
             parentId === draggedId ||
-            checkParent
+            checkParent ||
+            (target !== container && target.className !== 'member')
         ) {
             return (target.style.background = '');
         }
@@ -297,7 +298,10 @@ class OrgChart {
             }
         });
 
-        move(changeObj);
+        if (changeObj.length) {
+            move({ ...changeObj });
+        }
+
         tree = this._treeModel(data);
         container.innerHTML = '';
         this.tree = tree;
@@ -443,22 +447,32 @@ class OrgChart {
         });
 
         container.addEventListener('dragenter', function(e) {
+            const self = this;
+
             (function callee(el) {
                 if (el) {
-                    return el.className !== 'member'
-                        ? callee(el.parentElement)
-                        : (el.style.background = 'red');
+                    if (el.className !== 'member') {
+                        if (el === self) {
+                            el.style.background = 'red';
+                        } else {
+                            callee(el.parentElement);
+                            self.removeAttribute('style');
+                        }
+                    } else {
+                        el.style.background = 'red';
+                    }
                 }
             })(e.target);
         });
 
         container.addEventListener('dragleave', function(e) {
             if (e.target.className === 'member') {
-                e.target.style.background = '';
+                e.target.removeAttribute('style');
             }
         });
 
         container.addEventListener('drop', function(e) {
+            e.target.removeAttribute('style');
             moveNode(e, dragged);
         });
     }
