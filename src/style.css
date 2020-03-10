@@ -1,7 +1,16 @@
 #container {
     display: flex;
-    margin-top: 10rem;
+    width: 1600px;
+    height: 700px;
+    margin: 100px auto 0;
     justify-content: center;
+    border: 1px solid #ddd;
+    padding: 20px;
+    overflow: scroll;
+}
+
+#container::-webkit-scrollbar {
+    /* display: none; */
 }
 
 .group-column {

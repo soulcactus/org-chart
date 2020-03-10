@@ -6,6 +6,8 @@ class OrgChart {
             );
         } else {
             this.container = document.querySelector(container);
+            this.zoom = 1;
+            this.isDragged = false;
         }
     }
 
@@ -466,7 +468,7 @@ class OrgChart {
         });
 
         container.addEventListener('dragleave', function(e) {
-            if (e.target.className === 'member') {
+            if (e.target.className === 'member' || e.target === this) {
                 e.target.removeAttribute('style');
             }
         });
@@ -474,6 +476,47 @@ class OrgChart {
         container.addEventListener('drop', function(e) {
             e.target.removeAttribute('style');
             moveNode(e, dragged);
+            container.style.cursor = 'default';
+            this.isDragged = false;
+        });
+    }
+
+    _zoomEvent() {
+        const containerWrap = document.querySelector('.container-wrap');
+
+        containerWrap.style.transition = 'zoom 0.2s ease';
+        containerWrap.style.zoom = this.zoom;
+
+        container.addEventListener(
+            'mousewheel',
+            function(delta) {
+                if (delta.deltaY === 100 && this.zoom > 0.6) {
+                    this.zoom -= 0.05;
+                } else if (delta.deltaY === -100 && this.zoom < 5.1) {
+                    this.zoom += 0.05;
+                }
+
+                containerWrap.style.zoom = this.zoom;
+            }.bind(this)
+        );
+
+        container.addEventListener('mousedown', function(e) {
+            container.style.cursor = 'move';
+            this.isDragged = true;
+        });
+
+        container.addEventListener('mousemove', function(e) {
+            if (this.isDragged) {
+                console.dir(e);
+                container.style.cursor = 'move';
+                container.scrollLeft = e.clientX;
+                container.scrollTop = e.clientY;
+            }
+        });
+
+        container.addEventListener('mouseup', function(e) {
+            container.style.cursor = 'default';
+            this.isDragged = false;
         });
     }
 
@@ -518,6 +561,14 @@ class OrgChart {
     }
 
     _printTree(arr, parentNode, added = false) {
+        if (parentNode === container) {
+            const containerWrap = document.createElement('div');
+
+            containerWrap.className = 'container-wrap';
+            parentNode.appendChild(containerWrap);
+            parentNode = containerWrap;
+        }
+
         arr.forEach((item, index) => {
             const parent = item['parentId'];
             const children = item['children'];
@@ -654,6 +705,8 @@ class OrgChart {
                 }
             }
         });
+
+        this._zoomEvent();
     }
 
     draw(data, options) {
