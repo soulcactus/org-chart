@@ -7,7 +7,6 @@ class OrgChart {
         } else {
             this.container = document.querySelector(container);
             this.zoom = 1;
-            this.isDragged = false;
         }
     }
 
@@ -435,12 +434,20 @@ class OrgChart {
         container.addEventListener(
             'dragstart',
             function(e) {
+                if (container.style.cursor === 'move') {
+                    return;
+                }
+
                 dragged = e.target;
                 e.target.style.border = '1px solid red';
             }.bind(that)
         );
 
         container.addEventListener('dragend', function(e) {
+            if (container.style.cursor === 'move') {
+                return;
+            }
+
             e.target.style.border = '';
         });
 
@@ -450,6 +457,10 @@ class OrgChart {
 
         container.addEventListener('dragenter', function(e) {
             const self = this;
+
+            if (container.style.cursor === 'move') {
+                return;
+            }
 
             (function callee(el) {
                 if (el) {
@@ -468,21 +479,29 @@ class OrgChart {
         });
 
         container.addEventListener('dragleave', function(e) {
+            if (container.style.cursor === 'move') {
+                return;
+            }
+
             if (e.target.className === 'member' || e.target === this) {
                 e.target.removeAttribute('style');
             }
         });
 
         container.addEventListener('drop', function(e) {
+            if (container.style.cursor === 'move') {
+                return;
+            }
+
             e.target.removeAttribute('style');
             moveNode(e, dragged);
             container.style.cursor = 'default';
-            this.isDragged = false;
         });
     }
 
     _zoomEvent() {
         const containerWrap = document.querySelector('.container-wrap');
+        let flag = false;
 
         containerWrap.style.transition = 'zoom 0.2s ease';
         containerWrap.style.zoom = this.zoom;
@@ -501,22 +520,27 @@ class OrgChart {
         );
 
         container.addEventListener('mousedown', function(e) {
+            console.log('mousedown');
             container.style.cursor = 'move';
-            this.isDragged = true;
+            flag = true;
         });
 
         container.addEventListener('mousemove', function(e) {
-            if (this.isDragged) {
-                console.dir(e);
+            console.log('mousemove');
+
+            if (flag) {
                 container.style.cursor = 'move';
                 container.scrollLeft = e.clientX;
                 container.scrollTop = e.clientY;
+            } else {
+                container.style.cursor = 'default';
             }
         });
 
         container.addEventListener('mouseup', function(e) {
+            console.log('mouseup');
             container.style.cursor = 'default';
-            this.isDragged = false;
+            flag = false;
         });
     }
 
