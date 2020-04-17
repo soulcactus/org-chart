@@ -6,7 +6,7 @@ class OrgChart {
             );
         } else {
             this.container = document.querySelector(container);
-            this.zoom = 1;
+            this.defaultZoom = 1;
         }
     }
 
@@ -196,8 +196,6 @@ class OrgChart {
         this._addEvent();
 
         if (remove) {
-            console.log('삭제');
-
             if (input) {
                 --this.id;
 
@@ -346,7 +344,7 @@ class OrgChart {
 
             item.addEventListener(
                 'click',
-                function() {
+                function () {
                     const add = this.add;
                     const modify = this.modify;
                     const id = Number(item.parentElement.getAttribute('id'));
@@ -362,29 +360,21 @@ class OrgChart {
 
                     item.style.display = 'none';
 
-                    if (item.getAttribute('modified') && modify) {
-                        console.log('수정');
+                    data.forEach((value) => {
+                        if (value['id'] === id) {
+                            forms.forEach((val) => {
+                                const form = val.name.replace(/[0-9]/g, '');
 
-                        data.forEach((value) => {
-                            if (value['id'] === id) {
-                                forms.forEach((val) => {
-                                    const form = val.name.replace(/[0-9]/g, '');
+                                value[form] = val.value || profile[form];
+                            });
 
-                                    value[form] = val.value || profile[form];
-                                });
-
+                            if (item.getAttribute('modified') && modify) {
                                 modify(value);
-                            }
-                        });
-                    } else if (add) {
-                        console.log('추가');
-
-                        data.forEach((value) => {
-                            if (value['id'] === id) {
+                            } else if (add) {
                                 add(value);
                             }
-                        });
-                    }
+                        }
+                    });
 
                     item.removeAttribute('modified');
                 }.bind(this)
@@ -403,7 +393,7 @@ class OrgChart {
 
             item.addEventListener(
                 'click',
-                function(e) {
+                function (e) {
                     const spans = parent.querySelectorAll('span');
                     const forms = parent.querySelectorAll('input');
 
@@ -433,7 +423,7 @@ class OrgChart {
 
         container.addEventListener(
             'dragstart',
-            function(e) {
+            function (e) {
                 if (container.style.cursor === 'move') {
                     return;
                 }
@@ -443,7 +433,7 @@ class OrgChart {
             }.bind(that)
         );
 
-        container.addEventListener('dragend', function(e) {
+        container.addEventListener('dragend', function (e) {
             if (container.style.cursor === 'move') {
                 return;
             }
@@ -451,11 +441,11 @@ class OrgChart {
             e.target.style.border = '';
         });
 
-        container.addEventListener('dragover', function(e) {
+        container.addEventListener('dragover', function (e) {
             e.preventDefault();
         });
 
-        container.addEventListener('dragenter', function(e) {
+        container.addEventListener('dragenter', function (e) {
             const self = this;
 
             if (container.style.cursor === 'move') {
@@ -478,7 +468,7 @@ class OrgChart {
             })(e.target);
         });
 
-        container.addEventListener('dragleave', function(e) {
+        container.addEventListener('dragleave', function (e) {
             if (container.style.cursor === 'move') {
                 return;
             }
@@ -488,60 +478,44 @@ class OrgChart {
             }
         });
 
-        container.addEventListener('drop', function(e) {
+        container.addEventListener('drop', function (e) {
             if (container.style.cursor === 'move') {
                 return;
             }
 
-            e.target.removeAttribute('style');
+            if (e.target.className === 'member' || e.target === this) {
+                e.target.removeAttribute('style');
+            }
+
             moveNode(e, dragged);
             container.style.cursor = 'default';
         });
     }
 
     _zoomEvent() {
-        const containerWrap = document.querySelector('.container-wrap');
-        let flag = false;
+        if (this.useZoom) {
+            const containerWrap = document.querySelector('.container-wrap');
 
-        containerWrap.style.transition = 'zoom 0.2s ease';
-        containerWrap.style.zoom = this.zoom;
+            this.container.style.overflow = 'scroll';
+            containerWrap.style.transition = 'zoom 0.2s ease';
+            containerWrap.style.zoom = this.defaultZoom;
 
-        container.addEventListener(
-            'mousewheel',
-            function(delta) {
-                if (delta.deltaY === 100 && this.zoom > 0.6) {
-                    this.zoom -= 0.05;
-                } else if (delta.deltaY === -100 && this.zoom < 5.1) {
-                    this.zoom += 0.05;
-                }
+            container.addEventListener(
+                'mousewheel',
+                function (delta) {
+                    if (delta.deltaY === 100 && this.defaultZoom > 0.6) {
+                        this.defaultZoom -= 0.05;
+                    } else if (
+                        delta.deltaY === -100 &&
+                        this.defaultZoom < this.zoom
+                    ) {
+                        this.defaultZoom += 0.05;
+                    }
 
-                containerWrap.style.zoom = this.zoom;
-            }.bind(this)
-        );
-
-        container.addEventListener('mousedown', function(e) {
-            console.log('mousedown');
-            container.style.cursor = 'move';
-            flag = true;
-        });
-
-        container.addEventListener('mousemove', function(e) {
-            console.log('mousemove');
-
-            if (flag) {
-                container.style.cursor = 'move';
-                container.scrollLeft = e.clientX;
-                container.scrollTop = e.clientY;
-            } else {
-                container.style.cursor = 'default';
-            }
-        });
-
-        container.addEventListener('mouseup', function(e) {
-            console.log('mouseup');
-            container.style.cursor = 'default';
-            flag = false;
-        });
+                    containerWrap.style.zoom = this.defaultZoom;
+                }.bind(this)
+            );
+        }
     }
 
     _treeModel(data) {
@@ -738,11 +712,11 @@ class OrgChart {
             id: 0,
             name: 'name',
             parentId: null,
-            sequenceId: 0
+            sequenceId: 0,
         };
 
         const initialProfile = {
-            name: 'name'
+            name: 'name',
         };
 
         const excludedData = [];
@@ -799,6 +773,8 @@ class OrgChart {
 
         this.usePhoto = opts['usePhoto'];
         this.profile = opts['profile'] || initialProfile;
+        this.useZoom = opts['useZoom'] || false;
+        this.zoom = opts['zoom'] || opts['zoom'] > 3 ? 3 : opts['zoom'];
         this.data = treeData;
         tree = this._treeModel(treeData);
         this.tree = tree;
@@ -837,91 +813,95 @@ const data = [
         tel: '010-1234-5678',
         title: 'CEO',
         parentId: null,
-        sequenceId: 0
+        sequenceId: 0,
     },
     {
         id: 1,
         name: 'sibling1',
         parentId: 0,
-        sequenceId: 0
+        sequenceId: 0,
     },
     {
         id: '2',
         name: 'sibling2',
         parentId: 0,
-        sequenceId: 1
+        sequenceId: 1,
     },
     {
         id: 3,
         name: 'sibling3',
         parentId: 0,
-        sequenceId: 1
+        sequenceId: 1,
     },
     {
         id: 4,
         name: 'child1',
         parentId: 1,
-        sequenceId: 0
+        sequenceId: 0,
     },
     {
         id: 5,
         name: 'child2',
         parentId: 1,
-        sequenceId: 2
+        sequenceId: 2,
     },
     {
         id: 6,
         name: 'child3',
-        sequenceId: 0
+        sequenceId: 0,
     },
     {
         id: 7,
         name: 'child5',
         parentId: 30,
-        sequenceId: 0
+        sequenceId: 0,
     },
     {
         id: 8,
         name: 'child6',
         parentId: 3,
-        sequenceId: '0'
+        sequenceId: '0',
     },
     {
         id: 9,
         name: 'child4',
         parentId: 1,
-        sequenceId: 1
+        sequenceId: 1,
     },
     {
         id: 10,
         name: 'child7',
         parentId: 9,
-        sequenceId: 0
+        sequenceId: 0,
     },
     {
         id: 11,
         name: 'child8',
         parentId: 9,
-        sequenceId: 1
+        sequenceId: 1,
     },
     {
         id: 12,
         name: 'child9',
         parentId: 12,
-        sequenceId: 0
-    }
+        sequenceId: 0,
+    },
 ];
 
 const orgChart = new OrgChart('#container');
 
 orgChart.draw(data, {
+    width: 1600,
+    height: 700,
     usePhoto: true,
     profile: {
         name: 'name',
         tel: '000-0000-0000',
         title: 'none',
-        photo: './images/profile.png'
-    }
+        photo: './images/profile.png',
+    },
+    useZoom: true,
+    zoom: 10,
 });
 
 orgChart.add((node) => {
