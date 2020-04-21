@@ -9,10 +9,6 @@
     overflow: scroll;
 }
 
-#container::-webkit-scrollbar {
-    /* display: none; */
-}
-
 .group-column {
     display: flex;
     flex-direction: column;
