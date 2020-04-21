@@ -1,24 +1,41 @@
 {
-  "name": "organization-chart",
+  "name": "org-chart",
   "version": "1.0.0",
-  "description": "",
-  "main": "test.js",
+  "description": "A Simple Organizational Chart",
+  "main": "dist/orgChart.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "bundle": "webpack --mode=development",
+    "production": "webpack --mode=production"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/soulcactus/organization-chart.git"
+    "url": "https://github.com/soulcactus/org-chart.git"
   },
-  "author": "",
-  "license": "ISC",
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "author": {
+    "name": "soulcactus",
+    "email": "sunhyejin@mensakorea.org",
+    "url": "https://soulcactus.netlify.com"
+  },
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/soulcactus/organization-chart/issues"
+    "url": "https://github.com/soulcactus/org-chart/issues"
   },
-  "homepage": "https://github.com/soulcactus/organization-chart#readme",
+  "homepage": "https://github.com/soulcactus/org-chart#readme",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^2.15.0",
-    "@typescript-eslint/parser": "^2.15.0",
-    "eslint": "^6.8.0"
-  }
+    "@babel/core": "^7.9.0",
+    "babel-loader": "^8.1.0",
+    "css-loader": "^3.5.2",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
+  },
+  "dependencies": {},
+  "keywords": [
+    "chart",
+    "oranizational",
+    "oranization"
+  ]
 }
