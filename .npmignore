@@ -1,0 +1,14 @@
+# vscode
+.history/
+
+# node modules
+node_modules/
+
+# webpack
+webpack.*.js
+
+# example
+example/
+
+# prettier
+.prettierrc
