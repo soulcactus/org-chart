@@ -1,7 +1,15 @@
 {
-    "endOfLine": "lf",
-    "semi": true,
+    "endOfLine": "auto",
     "singleQuote": true,
     "tabWidth": 4,
-    "arrowParens": "always"
+    "trailingComma": "all",
+    "parser": "typescript",
+    "overrides": [
+        {
+            "files": "*.json",
+            "options": {
+                "printWidth": 200
+            }
+        }
+    ]
 }
