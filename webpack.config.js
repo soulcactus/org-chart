@@ -19,13 +19,10 @@ module.exports = {
                 exclude: /node_modules/,
                 loader: 'babel-loader',
             },
-<<<<<<< HEAD
             {
                 test: /\.css$/,
                 use: ['handlebars-loader', 'extract-loader', 'css-loader'],
             },
-=======
->>>>>>> b532d09fee610432f588212a1e55aa90975234eb
         ],
     },
 };
