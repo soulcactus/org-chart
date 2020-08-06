@@ -1,13 +1,15 @@
 const path = require('path');
 
 module.exports = {
-    mode: 'production',
+    mode: 'development',
     entry: {
-        orgChart: './lib/orgChart.js',
+        'org-chart': './lib/orgChart.js',
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
-        library: 'orgChart',
+        filename: 'index.js',
+        library: 'org-chart',
+        libraryExport: 'default',
         libraryTarget: 'umd',
     },
     module: {
@@ -19,7 +21,7 @@ module.exports = {
             },
             {
                 test: /\.css$/,
-                use: 'css-loader',
+                use: ['handlebars-loader', 'extract-loader', 'css-loader'],
             },
         ],
     },
