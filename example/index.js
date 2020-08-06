@@ -9,78 +9,124 @@ const data = [
         parentId: null,
         sequenceId: 0,
     },
-    {
-        id: 1,
-        name: 'sibling1',
-        parentId: 0,
-        sequenceId: 0,
-    },
-    {
-        id: '2',
-        name: 'sibling2',
-        parentId: 0,
-        sequenceId: 1,
-    },
-    {
-        id: 3,
-        name: 'sibling3',
-        parentId: 0,
-        sequenceId: 1,
-    },
-    {
-        id: 4,
-        name: 'child1',
-        parentId: 1,
-        sequenceId: 0,
-    },
-    {
-        id: 5,
-        name: 'child2',
-        parentId: 1,
-        sequenceId: 2,
-    },
-    {
-        id: 6,
-        name: 'child3',
-        sequenceId: 0,
-    },
-    {
-        id: 7,
-        name: 'child5',
-        parentId: 30,
-        sequenceId: 0,
-    },
-    {
-        id: 8,
-        name: 'child6',
-        parentId: 3,
-        sequenceId: '0',
-    },
-    {
-        id: 9,
-        name: 'child4',
-        parentId: 1,
-        sequenceId: 1,
-    },
-    {
-        id: 10,
-        name: 'child7',
-        parentId: 9,
-        sequenceId: 0,
-    },
-    {
-        id: 11,
-        name: 'child8',
-        parentId: 9,
-        sequenceId: 1,
-    },
-    {
-        id: 12,
-        name: 'child9',
-        parentId: 12,
-        sequenceId: 0,
-    },
 ];
+
+for (let i = 1; i < 300; i++) {
+    const obj = {};
+
+    obj.id = i;
+    obj.name = 'test';
+    obj.parentId = 0;
+    obj.sequenceId = 0;
+
+    data.push(obj);
+}
+
+for (let i = 1; i < 300; i++) {
+    const obj = {};
+
+    obj.id = i;
+    obj.name = 'test';
+    obj.parentId = 1;
+    obj.sequenceId = 0;
+
+    data.push(obj);
+}
+
+for (let i = 1; i < 300; i++) {
+    const obj = {};
+
+    obj.id = i;
+    obj.name = 'test';
+    obj.parentId = 2;
+    obj.sequenceId = 0;
+
+    data.push(obj);
+}
+
+// const data = [
+//     {
+//         id: 0,
+//         name: 'administrator1',
+//         tel: '010-1234-5678',
+//         title: 'CEO',
+//         parentId: null,
+//         sequenceId: 0,
+//     },
+//     {
+//         id: 1,
+//         name: 'sibling1',
+//         parentId: 0,
+//         sequenceId: 0,
+//     },
+//     {
+//         id: '2',
+//         name: 'sibling2',
+//         parentId: 0,
+//         sequenceId: 1,
+//     },
+//     {
+//         id: 3,
+//         name: 'sibling3',
+//         parentId: 0,
+//         sequenceId: 1,
+//     },
+//     {
+//         id: 4,
+//         name: 'child1',
+//         parentId: 1,
+//         sequenceId: 0,
+//     },
+//     {
+//         id: 5,
+//         name: 'child2',
+//         parentId: 1,
+//         sequenceId: 2,
+//     },
+//     {
+//         id: 6,
+//         name: 'child3',
+//         sequenceId: 0,
+//     },
+//     {
+//         id: 7,
+//         name: 'child5',
+//         parentId: 30,
+//         sequenceId: 0,
+//     },
+//     {
+//         id: 8,
+//         name: 'child6',
+//         parentId: 3,
+//         sequenceId: '0',
+//     },
+//     {
+//         id: 9,
+//         name: 'child4',
+//         parentId: 1,
+//         sequenceId: 1,
+//     },
+//     {
+//         id: 10,
+//         name: 'child7',
+//         parentId: 9,
+//         sequenceId: 0,
+//     },
+//     {
+//         id: 11,
+//         name: 'child8',
+//         parentId: 9,
+//         sequenceId: 1,
+//     },
+//     {
+//         id: 12,
+//         name: 'child9',
+//         parentId: 12,
+//         sequenceId: 0,
+//     },
+// ];
+
+// console.log(data);
 
 const orgChart = new OrgChart('#container');
 
