@@ -2,7 +2,7 @@
   "name": "org-chart",
   "version": "1.0.0",
   "description": "A Simple Organizational Chart",
-  "main": "dist/orgChart.js",
+  "main": "dist/index",
   "scripts": {
     "bundle": "webpack --mode=development",
     "production": "webpack --mode=production"
@@ -29,6 +29,9 @@
     "@babel/core": "^7.9.0",
     "babel-loader": "^8.1.0",
     "css-loader": "^3.5.2",
+    "extract-loader": "^5.0.1",
+    "handlebars": "^4.7.6",
+    "handlebars-loader": "^1.7.1",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11"
   },
